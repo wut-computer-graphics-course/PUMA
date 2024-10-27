@@ -1,0 +1,51 @@
+#include "ImGuiLayer.hh"
+#include "Application.hh"
+
+namespace sym_base
+{
+  void ImGuiLayer::attach()
+  {
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+
+    auto& app    = Application::get();
+    auto* window = static_cast<GLFWwindow*>(app.get_window().get_handle());
+
+    // Setup Platform/Renderer bindings
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 410");
+  }
+
+  void ImGuiLayer::detach()
+  {
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+  }
+
+  void ImGuiLayer::handle_event(Event& event, float dt) { Layer::handle_event(event, dt); }
+
+  void ImGuiLayer::begin()
+  {
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+  }
+
+  void ImGuiLayer::end()
+  {
+    //    ImGuiIO& io      = ImGui::GetIO();
+    //    Application& app = Application::get();
+    //    io.DisplaySize   = ImVec2((float)app.get_window().get_width(), (float)app.get_window().get_height());
+
+    // Rendering
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+  }
+} // namespace sym_base

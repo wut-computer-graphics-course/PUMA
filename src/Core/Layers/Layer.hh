@@ -21,6 +21,9 @@ namespace sym_base
     /// @brief Runs layer logic.
     /// @param dt Time that has passed since last update.
     virtual void update(float dt) {}
+    /// @brief Runs layer logic when rendering imgui.
+    /// @param dt Time that has passed since last update.
+    virtual void imgui_update(float dt) {}
     /// @brief Handle event by this layer.
     /// @param event Event to be handled.
     /// @param dt Time that has passed since last update.

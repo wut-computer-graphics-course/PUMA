@@ -29,6 +29,9 @@ namespace sym_base
 
     // create (alloc and init) layer stacks
     m_layer_stack = new LayerStack();
+
+    m_imgui_layer = new ImGuiLayer();
+    push_layer(m_imgui_layer);
   }
 
   Application::~Application()
@@ -50,20 +53,45 @@ namespace sym_base
       }
       else { m_timer.reset(); }
 
+      m_imgui_layer->begin();
+      {
+        for (auto layer : *m_layer_stack)
+        {
+          layer->imgui_update(m_timer.get_dt());
+        }
+      }
+      m_imgui_layer->end();
+
       this->update(m_timer.get_dt());
 
       m_window->update();
+
+      // TODO: renderer
+      glViewport(0, 0, 1280, 720);
+      glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+      glClear(GL_COLOR_BUFFER_BIT);
     }
   }
 
-  void Application::push_layer(Layer* layer) { m_layer_stack->push_layer(layer); }
+  void Application::update(float dt)
+  {
+    for (auto layer : *m_layer_stack)
+    {
+      layer->update(m_timer.get_dt());
+    }
+  }
+
+  void Application::push_layer(Layer* layer)
+  {
+    m_layer_stack->push_layer(layer);
+    layer->attach();
+  }
 
   bool Application::on_window_closed(WindowClosedEvent& e)
   {
     m_running = false;
     return true;
   }
-
   void Application::events_manager(Event& e)
   {
     Event::try_handler<WindowClosedEvent>(e, BIND_EVENT_FOR_FUN(Application::on_window_closed));

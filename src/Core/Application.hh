@@ -4,6 +4,7 @@
 #include "pch.hh"
 
 #include "Events/Events.hh"
+#include "ImGui/ImGuiLayer.hh"
 #include "Timer.hh"
 #include "Window.hh"
 
@@ -28,10 +29,11 @@ namespace sym_base
     virtual ~Application();
 
     void run();
-    virtual void update(float dt) {}
+    virtual void update(float dt);
     void push_layer(Layer* layer);
 
-    inline static Window& get_window() { return *s_instance->m_window; }
+    inline static Application& get() { return *s_instance; }
+    inline Window& get_window() { return *s_instance->m_window; }
 
    private:
     bool on_window_closed(WindowClosedEvent& e);
@@ -48,6 +50,8 @@ namespace sym_base
     static EventCallbackFn s_events_manager;
 
     LayerStack* m_layer_stack;
+    ImGuiLayer* m_imgui_layer;
+
     std::unique_ptr<Window> m_window;
   };
 } // namespace sym_base

@@ -10,8 +10,8 @@ namespace sym_base
   struct WindowData
   {
     const std::string m_title;
-    const uint32_t m_width;
-    const uint32_t m_height;
+    uint32_t m_width;
+    uint32_t m_height;
     bool m_vsync;
 
     EventCallbackFn m_event_callback;

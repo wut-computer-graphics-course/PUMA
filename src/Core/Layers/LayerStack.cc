@@ -8,6 +8,7 @@ namespace sym_base
   {
     for (Layer* layer : m_layers)
     {
+      layer->detach();
       delete layer;
     }
   }
@@ -22,6 +23,7 @@ namespace sym_base
     auto iter = std::find(m_layers.begin(), m_layers.end(), layer);
     if (iter != m_layers.end())
     {
+      layer->detach();
       m_layers.erase(iter);
       m_head_of_normal_layers--;
     }

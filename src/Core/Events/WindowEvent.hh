@@ -23,20 +23,20 @@ namespace sym_base
     /// @brief Constructor setting new width and height of window.
     /// @param width New window width.
     /// @param height New window height.
-    WindowResizedEvent(unsigned int width, unsigned int height) : m_width(width), m_height(height) {}
+    WindowResizedEvent(uint32_t width, uint32_t height) : m_width(width), m_height(height) {}
     /// @brief Returns new window width.
     /// @return New window width.
-    inline unsigned int get_width() const { return m_width; }
+    inline uint32_t get_width() const { return m_width; }
 
     /// @brief Returns new window height.
     /// @return New window height.
-    inline unsigned int get_height() const { return m_height; }
+    inline uint32_t get_height() const { return m_height; }
     EVENT_CLASS_TYPE(EventTypeWindow)
     EVENT_CLASS_SUBTYPE(WindowResized)
 
    private:
-    unsigned int m_width;
-    unsigned int m_height;
+    uint32_t m_width;
+    uint32_t m_height;
   };
 } // namespace sym_base
 

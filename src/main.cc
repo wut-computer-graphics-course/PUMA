@@ -1,18 +1,21 @@
 #include "Application.hh"
 #include "Input/Input.hh"
+#include "Simulation/GuiLayer.hh"
 
 using namespace sym_base;
+using namespace sym;
 
 class SimulationApp : public Application
 {
  public:
-  SimulationApp(const ApplicationParams& params) : Application(params) {}
+  SimulationApp(const ApplicationParams& params) : Application(params) { push_layer(new GuiLayer()); }
 
   ~SimulationApp() override {}
 
   virtual void update(float dt) override
   {
     if (Input::is_key_pressed(GLFW_KEY_ESCAPE)) { m_running = false; }
+    Application::update(dt);
   }
 };
 

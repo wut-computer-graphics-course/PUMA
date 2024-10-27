@@ -5,8 +5,9 @@ namespace sym_base
 {
   bool Input::is_key_pressed(int keycode)
   {
-    auto window = Application::get_window().get_handle();
-    auto state  = glfwGetKey(window, keycode);
+    auto& app    = Application::get();
+    auto* window = static_cast<GLFWwindow*>(app.get_window().get_handle());
+    auto state   = glfwGetKey(window, keycode);
 
     return state == GLFW_PRESS;
   }

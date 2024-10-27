@@ -32,7 +32,7 @@ namespace sym_base
 
     glfwSetErrorCallback(glfw_error_callback);
     m_window = glfwCreateWindow((int)m_data.m_width, (int)m_data.m_height, m_data.m_title.c_str(), nullptr, nullptr);
-    if (m_window == NULL) { throw std::runtime_error("Failed to create window instance"); }
+    if (m_window == nullptr) { throw std::runtime_error("Failed to create window instance"); }
     glfwMakeContextCurrent(m_window);
     glfwSetWindowUserPointer(m_window, &m_data);
     set_vsync(true);
@@ -57,5 +57,17 @@ namespace sym_base
                                  WindowClosedEvent event;
                                  data->m_event_callback(event);
                                });
+
+    glfwSetFramebufferSizeCallback(m_window,
+                                   [](GLFWwindow* window, int width, int height)
+                                   {
+                                     auto* data     = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+                                     data->m_width  = width;
+                                     data->m_height = height;
+                                     WindowResizedEvent event{ (uint32_t)width, (uint32_t)height };
+                                     data->m_event_callback(event);
+
+                                     glViewport(0, 0, width, height);
+                                   });
   }
 } // namespace sym_base
