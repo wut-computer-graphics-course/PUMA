@@ -7,6 +7,14 @@ set(CMAKE_CXX_STANDARD 20)
 find_package(OpenGL REQUIRED)
 # -------------------------------------------------------------------------
 
+# ------------------------------ INCLUDE GLAD ------------------------------
+set(GLAD_SRC_DIR "${CMAKE_SOURCE_DIR}/external/glad")
+
+add_library(glad STATIC ${GLAD_SRC_DIR}/src/glad.c)
+
+target_include_directories(glad PUBLIC ${GLAD_SRC_DIR}/include)
+# -------------------------------------------------------------------------
+
 # ------------------------------ INCLUDE GLFW ------------------------------
 find_package(glfw3 3.3 REQUIRED)
 # -------------------------------------------------------------------------
@@ -54,7 +62,8 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hh)
 
 target_link_libraries(
         ${PROJECT_NAME}
-        ${OPENGL_LIBRARIES}
+        glad
+        OpenGL::GL
         glfw
         ${GLM_LIBRARIES}
         ${IMGUI_LIBRARIES}

@@ -12,8 +12,8 @@
 #include <string>
 #include <thread>
 
-// opengl
-#include <GL/glew.h>
+// glad
+#include <glad/glad.h>
 
 // glfw
 #include <GLFW/glfw3.h>
