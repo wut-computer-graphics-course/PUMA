@@ -16,7 +16,7 @@ namespace sym_base
   void Window::update()
   {
     glfwPollEvents();
-    glfwSwapBuffers(m_window);
+    m_context->swap_buffers();
   }
 
   Window::Window(const WindowData& data) : m_data{ data } { init(); }
@@ -30,10 +30,12 @@ namespace sym_base
       s_glfw_initialized = true;
     }
 
-    glfwSetErrorCallback(glfw_error_callback);
     m_window = glfwCreateWindow((int)m_data.m_width, (int)m_data.m_height, m_data.m_title.c_str(), nullptr, nullptr);
     if (m_window == nullptr) { throw std::runtime_error("Failed to create window instance"); }
-    glfwMakeContextCurrent(m_window);
+
+    m_context = new RenderingContext(m_window);
+    m_context->init();
+
     glfwSetWindowUserPointer(m_window, &m_data);
     set_vsync(true);
     set_callbacks();
@@ -57,7 +59,7 @@ namespace sym_base
                                  WindowClosedEvent event;
                                  data->m_event_callback(event);
                                });
-
+    glfwSetErrorCallback(glfw_error_callback);
     glfwSetFramebufferSizeCallback(m_window,
                                    [](GLFWwindow* window, int width, int height)
                                    {

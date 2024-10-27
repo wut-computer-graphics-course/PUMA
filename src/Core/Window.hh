@@ -3,6 +3,7 @@
 
 #include "pch.hh"
 
+#include "Renderer/RenderingContext.hh"
 #include "Utils.hh"
 
 namespace sym_base
@@ -45,6 +46,7 @@ namespace sym_base
    private:
     WindowData m_data;
     GLFWwindow* m_window;
+    RenderingContext* m_context;
   };
 } // namespace sym_base
 
