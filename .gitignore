@@ -1,0 +1,13 @@
+.vscode
+.idea
+.DS_Store
+
+build
+cmake-build-debug
+Debug
+Release
+
+__pycache__
+
+.clang-tidy
+.clang-format
