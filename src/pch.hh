@@ -7,6 +7,7 @@
 #include <map>
 #include <memory>
 #include <queue>
+#include <ranges>
 #include <stdexcept>
 #include <string>
 #include <thread>

@@ -1,20 +1,14 @@
 cmake_minimum_required(VERSION 3.27)
 project(sym_base)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # ------------------------------ INCLUDE OpenGl ------------------------------
 find_package(OpenGL REQUIRED)
 # -------------------------------------------------------------------------
 
 # ------------------------------ INCLUDE GLFW ------------------------------
-set(GLFW_PATH "${PROJECT_SOURCE_DIR}/external/glfw/src")
-
-file(GLOB GLFW_SOURCES ${GLFW_PATH}/*.c)
-
-add_library(GLFW STATIC ${GLFW_SOURCES})
-
-set(GLFW_LIBRARIES GLFW)
+find_package(glfw3 3.3 REQUIRED)
 # -------------------------------------------------------------------------
 
 # ------------------------------ INCLUDE GLM ------------------------------
@@ -52,7 +46,7 @@ file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cc)
 
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${PROJECT_SOURCE_DIR}/src/TimedLoop)
+include_directories(${PROJECT_SOURCE_DIR}/src/Core)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
@@ -61,7 +55,7 @@ target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.hh)
 target_link_libraries(
         ${PROJECT_NAME}
         ${OPENGL_LIBRARIES}
-        ${GLFW_LIBRARIES}
+        glfw
         ${GLM_LIBRARIES}
         ${IMGUI_LIBRARIES}
         ${IMPLOT_LIBRARIES}
