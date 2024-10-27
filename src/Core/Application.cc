@@ -1,5 +1,6 @@
 #include "Application.hh"
 #include "Layers/LayerStack.hh"
+#include "Renderer/Buffer.hh"
 #include "Renderer/Shader.hh"
 
 namespace sym_base
@@ -9,7 +10,9 @@ namespace sym_base
   Application* Application::s_instance          = nullptr;
   EventCallbackFn Application::s_events_manager = nullptr;
 
-  GLuint vertex_array, vertex_buffer, index_buffer;
+  GLuint vertex_array;
+  VertexBuffer* vertex_buffer;
+  IndexBuffer* index_buffer;
   Shader* shader;
 
   Application::Application(const ApplicationParams& params) : m_running{ true }
@@ -40,20 +43,14 @@ namespace sym_base
     glGenVertexArrays(1, &vertex_array);
     glBindVertexArray(vertex_array);
 
-    glGenBuffers(1, &vertex_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-
     float vertices[3 * 3] = { -.5f, -.5f, 0.f, .5f, -.5f, 0.f, 0.f, .5f, 0.f };
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // flush data to gpu
+    vertex_buffer         = new VertexBuffer(vertices, sizeof(vertices));
 
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
-    glGenBuffers(1, &index_buffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
-
     uint32_t indices[3] = { 0, 1, 2 };
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    index_buffer        = new IndexBuffer(indices, 3);
 
     std::string vertex_src = R"(
       #version 330 core
@@ -103,7 +100,7 @@ namespace sym_base
 
       glBindVertexArray(vertex_array);
       shader->bind();
-      glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
+      glDrawElements(GL_TRIANGLES, index_buffer->get_count(), GL_UNSIGNED_INT, nullptr);
       //
 
       this->update(m_timer.get_dt());
