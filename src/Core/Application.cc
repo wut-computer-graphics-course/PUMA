@@ -43,11 +43,29 @@ namespace sym_base
     glGenVertexArrays(1, &vertex_array);
     glBindVertexArray(vertex_array);
 
-    float vertices[3 * 3] = { -.5f, -.5f, 0.f, .5f, -.5f, 0.f, 0.f, .5f, 0.f };
-    vertex_buffer         = new VertexBuffer(vertices, sizeof(vertices));
+    float vertices[3 * (3 + 4)] = { -.5f, -.5f, 0.f, 1.f, 0.f, 0.f, 1.f, //
+                                    .5f,  -.5f, 0.f, 0.f, 1.f, 0.f, 1.f, //
+                                    0.f,  .5f,  0.f, 0.f, 0.f, 1.f, 1.f };
+    vertex_buffer               = new VertexBuffer(vertices, sizeof(vertices));
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+    {
+      BufferLayout layout = { { SharedDataType::Float3, "a_Position" }, { SharedDataType::Float4, "a_Color" } };
+      vertex_buffer->set_layout(layout);
+    }
+
+    uint32_t idx       = 0;
+    const auto& layout = vertex_buffer->get_layout();
+    for (const auto& element : layout)
+    {
+      glEnableVertexAttribArray(idx);
+      glVertexAttribPointer(idx,
+                            element.get_component_count(),
+                            element.get_gl_type(),
+                            element.m_normalized,
+                            layout.get_stride(),
+                            (const void*)(element.m_offset));
+      idx++;
+    }
 
     uint32_t indices[3] = { 0, 1, 2 };
     index_buffer        = new IndexBuffer(indices, 3);
@@ -56,10 +74,15 @@ namespace sym_base
       #version 330 core
 
       layout(location = 0) in vec3 a_Position;
+      layout(location = 1) in vec4 a_Color;
+
+      out vec4 v_Color;
 
       void main()
       {
         gl_Position = vec4(a_Position, 1.0);
+
+        v_Color = a_Color;
       })";
 
     std::string fragment_src = R"(
@@ -67,9 +90,11 @@ namespace sym_base
 
       layout(location = 0) out vec4 color;
 
+      in vec4 v_Color;
+
       void main()
       {
-        color = vec4(0.8, 0.2, 0.3, 1.0);
+        color = v_Color;
       })";
 
     shader = new Shader(vertex_src, fragment_src);
