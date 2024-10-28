@@ -7,6 +7,7 @@ namespace sym_base
   {
    public:
     static bool is_key_pressed(int keycode);
+    static bool is_mouse_button_pressed(int button);
   };
 } // namespace sym_base
 

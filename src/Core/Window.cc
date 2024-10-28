@@ -71,7 +71,24 @@ namespace sym_base
                                      WindowResizedEvent event{ (uint32_t)width, (uint32_t)height };
                                      data->m_event_callback(event);
 
-                                     glViewport(0, 0, width, height);
+                                     glViewport(0, 0, width, height); // TODO:
                                    });
+    glfwSetScrollCallback(m_window,
+                          [](GLFWwindow* window, double x_offset, double y_offset)
+                          {
+                            WindowData* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+
+                            MouseScrolledEvent event((float)x_offset, (float)y_offset);
+                            data->m_event_callback(event);
+                          });
+
+    glfwSetCursorPosCallback(m_window,
+                             [](GLFWwindow* window, double x_pos, double y_pos)
+                             {
+                               WindowData* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+
+                               MouseMovedEvent event((float)x_pos, (float)y_pos);
+                               data->m_event_callback(event);
+                             });
   }
 } // namespace sym_base
