@@ -1,6 +1,8 @@
 #ifndef SYM_BASE_MYLAYER_HH
 #define SYM_BASE_MYLAYER_HH
 
+#include "pch.hh"
+
 #include "Layers/Layer.hh"
 #include "Renderer/Buffer.hh"
 #include "Renderer/Renderer.hh"
@@ -96,9 +98,11 @@ namespace sym
 
       layout(location = 0) out vec4 color;
 
+      uniform vec3 u_Color;
+
       void main()
       {
-        color = vec4(1.0, 1.0, 1.0, 1.0);
+        color = vec4(u_Color, 1.0);
       })";
 
         m_square_shader = std::make_shared<Shader>(vertex_src, fragment_src);
@@ -114,6 +118,7 @@ namespace sym
       Renderer::begin_scene();
       {
         m_square_shader->bind();
+        m_square_shader->upload_uniform_float3("u_Color", m_square_color);
         Renderer::submit(m_square_va);
         m_square_va->unbind();
 
@@ -124,12 +129,20 @@ namespace sym
       Renderer::end_scene();
     }
 
+    virtual void imgui_update(float dt)
+    {
+      ImGui::Begin("Settings");
+      ImGui::ColorEdit3("Square color", glm::value_ptr(m_square_color));
+      ImGui::End();
+    }
+
    private:
     std::shared_ptr<VertexArray> m_triangle_va;
     std::shared_ptr<Shader> m_triangle_shader;
 
     std::shared_ptr<VertexArray> m_square_va;
     std::shared_ptr<Shader> m_square_shader;
+    glm::vec3 m_square_color = { 0, 0, 0 };
   };
 } // namespace sym
 
