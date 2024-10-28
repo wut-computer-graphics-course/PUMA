@@ -6,9 +6,25 @@ namespace sym_base
 
   VertexArray::~VertexArray() { glDeleteVertexArrays(1, &m_renderer_id); }
 
-  void VertexArray::bind() const { glBindVertexArray(m_renderer_id); }
+  void VertexArray::bind() const
+  {
+    glBindVertexArray(m_renderer_id);
+    for (auto& buffer : m_vertex_buffers)
+    {
+      buffer->bind();
+    }
+    m_index_buffer->bind();
+  }
 
-  void VertexArray::unbind() const { glBindVertexArray(0); }
+  void VertexArray::unbind() const
+  {
+    for (auto& buffer : m_vertex_buffers)
+    {
+      buffer->unbind();
+    }
+    m_index_buffer->unbind();
+    glBindVertexArray(0);
+  }
 
   void VertexArray::add_vertex_buffer(const std::shared_ptr<VertexBuffer>& vertex_buffer)
   {
