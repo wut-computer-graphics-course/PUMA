@@ -1,9 +1,11 @@
 #include "Application.hh"
 #include "Layers/LayerStack.hh"
+#include "Renderer/RenderCommand.hh"
 
 namespace sym_base
 {
-  static float s_refresh_rate = 0;
+  static float s_refresh_rate    = 0;
+  static glm::vec4 s_clear_color = { 0, 0, 0, 0 };
 
   Application* Application::s_instance          = nullptr;
   EventCallbackFn Application::s_events_manager = nullptr;
@@ -15,6 +17,9 @@ namespace sym_base
     // set refresh rate
     s_refresh_rate = params.m_refresh_rate;
 
+    // set clear color
+    s_clear_color = params.m_clear_color;
+
     // create event manager
     s_events_manager = BIND_EVENT_FOR_FUN(Application::events_manager);
 
@@ -23,6 +28,7 @@ namespace sym_base
         params.m_title,
         params.m_width,
         params.m_height,
+        params.m_samples,
         params.m_vsync,
     }));
     m_window->set_event_callback_fn(s_events_manager);
@@ -45,6 +51,9 @@ namespace sym_base
   {
     while (m_running)
     {
+      RenderCommand::set_clear_color(s_clear_color);
+      RenderCommand::clear();
+
       m_timer.tick();
       if (m_timer.get_dt() < s_refresh_rate)
       {

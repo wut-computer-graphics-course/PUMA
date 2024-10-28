@@ -16,8 +16,10 @@ namespace sym_base
     std::string m_title;
     uint32_t m_width;
     uint32_t m_height;
+    uint32_t m_samples;
     bool m_vsync;
     float m_refresh_rate;
+    glm::vec4 m_clear_color;
   };
 
   class Application

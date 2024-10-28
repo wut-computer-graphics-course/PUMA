@@ -11,6 +11,10 @@ class SimulationApp : public Application
  public:
   SimulationApp(const ApplicationParams& params) : Application(params)
   {
+    RenderCommand::enable_depth_buffering();
+    RenderCommand::enable_anti_aliasing();
+    RenderCommand::enable_face_culling();
+
     push_layer(new GuiLayer());
     push_layer(new MyLayer());
   }
@@ -26,13 +30,13 @@ class SimulationApp : public Application
 
 int main()
 {
-  SimulationApp app({
-      .m_title        = "Sym base",
-      .m_width        = 1280,
-      .m_height       = 720,
-      .m_vsync        = true,
-      .m_refresh_rate = 1 / 60.f,
-  });
+  SimulationApp app({ .m_title        = "Sym base",
+                      .m_width        = 1280,
+                      .m_height       = 720,
+                      .m_samples      = 4,
+                      .m_vsync        = true,
+                      .m_refresh_rate = 1 / 60.f,
+                      .m_clear_color  = { .1f, .1f, .1f, .1f } });
   {
     app.run();
   }

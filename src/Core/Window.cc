@@ -30,6 +30,8 @@ namespace sym_base
       s_glfw_initialized = true;
     }
 
+    if (m_data.m_samples) { glfwWindowHint(GLFW_SAMPLES, m_data.m_samples); }
+
     m_window = glfwCreateWindow((int)m_data.m_width, (int)m_data.m_height, m_data.m_title.c_str(), nullptr, nullptr);
     if (m_window == nullptr) { throw std::runtime_error("Failed to create window instance"); }
 

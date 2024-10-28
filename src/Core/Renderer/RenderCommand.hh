@@ -9,6 +9,13 @@ namespace sym_base
   {
    public:
     static void set_clear_color(const glm::vec4& color);
+    static void set_draw_primitive(const DrawPrimitive& primitive);
+    static void set_line_width(float width);
+
+    static void enable_depth_buffering();
+    static void enable_anti_aliasing();
+    static void enable_face_culling();
+
     static void clear();
 
     static void draw_indexed(const std::shared_ptr<VertexArray>& vertex_array);

@@ -31,51 +31,60 @@ namespace sym
         uint32_t indices[3] = { 0, 1, 2 };
         auto index_buffer   = std::make_shared<IndexBuffer>(indices, 3);
 
-        m_triangle_va = std::make_shared<VertexArray>();
-        m_triangle_va->add_vertex_buffer(vertex_buffer);
-        m_triangle_va->set_index_buffer(index_buffer);
+        m_triangle.m_va = std::make_shared<VertexArray>();
+        m_triangle.m_va->add_vertex_buffer(vertex_buffer);
+        m_triangle.m_va->set_index_buffer(index_buffer);
 
-        m_triangle_shader = std::make_shared<Shader>("shaders/triangle.glsl");
+        m_triangle.m_shader = std::make_shared<Shader>("shaders/triangle.glsl");
       }
 
-      // square
+      // cube
       {
-        float vertices[4 * 3] = { -.5f, -.5f, 0.f, //
-                                  .5f,  -.5f, 0.f, //
-                                  .5f,  .5f,  0.f, //
-                                  -.5f, .5f,  0.f };
-        auto vertex_buffer    = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
+        float vertices[4 * 3 * 2] = { -.5f, -.5f, .5f,  //
+                                      .5f,  -.5f, .5f,  //
+                                      .5f,  .5f,  .5f,  //
+                                      -.5f, .5f,  .5f,  //
+                                      -.5f, -.5f, -.5f, //
+                                      .5f,  -.5f, -.5f, //
+                                      .5f,  .5f,  -.5f, //
+                                      -.5f, .5f,  -.5f };
+        auto vertex_buffer        = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
 
         BufferLayout layout = { { SharedDataType::Float3, "a_Position" } };
         vertex_buffer->set_layout(layout);
 
-        uint32_t indices[6] = { 0, 1, 2, 2, 3, 0 };
-        auto index_buffer   = std::make_shared<IndexBuffer>(indices, 6);
+        uint32_t indices[] = { 0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 3, 7, 2, 6 };
+        auto index_buffer  = std::make_shared<IndexBuffer>(indices, sizeof(indices) / sizeof(uint32_t));
 
-        m_square_va = std::make_shared<VertexArray>();
-        m_square_va->add_vertex_buffer(vertex_buffer);
-        m_square_va->set_index_buffer(index_buffer);
+        m_cube.m_va = std::make_shared<VertexArray>();
+        m_cube.m_va->add_vertex_buffer(vertex_buffer);
+        m_cube.m_va->set_index_buffer(index_buffer);
 
-        m_square_shader = std::make_shared<Shader>("shaders/square.glsl");
+        m_cube.m_shader = std::make_shared<Shader>("shaders/cube.glsl");
       }
     }
     ~MyLayer() = default;
 
     void update(float dt) override
     {
-      RenderCommand::set_clear_color({ .1f, .1f, .1f, 1.f });
-      RenderCommand::clear();
-
       Renderer::begin_scene();
       {
-        m_square_shader->bind();
-        m_square_shader->upload_uniform_float3("u_Color", m_square_color);
-        Renderer::submit(m_square_va);
-        m_square_va->unbind();
+        m_cube.m_shader->bind();
+        m_cube.m_shader->upload_uniform_float3("u_Color", m_cube.m_color);
+        m_cube.m_rotation *= glm::angleAxis(dt / 2, glm::vec3(1, 1, 0));
+        auto model_mat = glm::translate(glm::mat4(1.f), m_cube.m_translation) * glm::mat4_cast(m_cube.m_rotation) *
+            glm::scale(glm::mat4(1.f), glm::vec3(m_cube.m_scale));
+        m_cube.m_shader->upload_uniform_mat4("u_ModelMat", model_mat);
+        RenderCommand::set_draw_primitive(DrawPrimitive::LINES);
+        RenderCommand::set_line_width(2);
+        Renderer::submit(m_cube.m_va);
+        m_cube.m_va->unbind();
 
-        m_triangle_shader->bind();
-        Renderer::submit(m_triangle_va);
-        m_triangle_va->unbind();
+        m_triangle.m_shader->bind();
+        RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
+        RenderCommand::set_line_width(1);
+        Renderer::submit(m_triangle.m_va);
+        m_triangle.m_va->unbind();
       }
       Renderer::end_scene();
     }
@@ -83,17 +92,26 @@ namespace sym
     virtual void imgui_update(float dt)
     {
       ImGui::Begin("Settings");
-      ImGui::ColorEdit3("Square color", glm::value_ptr(m_square_color));
+      ImGui::ColorEdit3("Cube color", glm::value_ptr(m_cube.m_color));
       ImGui::End();
     }
 
    private:
-    std::shared_ptr<VertexArray> m_triangle_va;
-    std::shared_ptr<Shader> m_triangle_shader;
+    struct
+    {
+      std::shared_ptr<VertexArray> m_va;
+      std::shared_ptr<Shader> m_shader;
+    } m_triangle;
 
-    std::shared_ptr<VertexArray> m_square_va;
-    std::shared_ptr<Shader> m_square_shader;
-    glm::vec3 m_square_color = { 0, 0, 0 };
+    struct
+    {
+      std::shared_ptr<VertexArray> m_va;
+      std::shared_ptr<Shader> m_shader;
+      glm::vec3 m_color       = { 0, 0, 0 };
+      glm::vec3 m_translation = { 0, 0, 0 };
+      glm::quat m_rotation    = { 1, 0, 0, 0 };
+      float m_scale           = 1.1f;
+    } m_cube;
   };
 } // namespace sym
 
