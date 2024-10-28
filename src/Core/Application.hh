@@ -5,9 +5,6 @@
 
 #include "Events/Events.hh"
 #include "ImGui/ImGuiLayer.hh"
-#include "Renderer/Buffer.hh"
-#include "Renderer/Shader.hh"
-#include "Renderer/VertexArray.hh"
 #include "Timer.hh"
 #include "Window.hh"
 
@@ -56,12 +53,6 @@ namespace sym_base
     ImGuiLayer* m_imgui_layer;
 
     std::unique_ptr<Window> m_window;
-
-    std::shared_ptr<VertexArray> m_triangle_va;
-    std::shared_ptr<Shader> m_triangle_shader;
-
-    std::shared_ptr<VertexArray> m_square_va;
-    std::shared_ptr<Shader> m_square_shader;
   };
 } // namespace sym_base
 

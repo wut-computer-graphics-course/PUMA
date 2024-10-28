@@ -1,6 +1,5 @@
 #include "Application.hh"
 #include "Layers/LayerStack.hh"
-#include "Renderer/Renderer.hh"
 
 namespace sym_base
 {
@@ -33,94 +32,6 @@ namespace sym_base
 
     m_imgui_layer = new ImGuiLayer();
     push_layer(m_imgui_layer);
-
-    // triangle
-    {
-      float vertices[3 * (3 + 4)] = { -.5f, -.5f, 0.f, 1.f, 0.f, 0.f, 1.f, //
-                                      .5f,  -.5f, 0.f, 0.f, 1.f, 0.f, 1.f, //
-                                      0.f,  .5f,  0.f, 0.f, 0.f, 1.f, 1.f };
-      auto vertex_buffer          = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
-
-      BufferLayout layout = { { SharedDataType::Float3, "a_Position" }, { SharedDataType::Float4, "a_Color" } };
-      vertex_buffer->set_layout(layout);
-
-      uint32_t indices[3] = { 0, 1, 2 };
-      auto index_buffer   = std::make_shared<IndexBuffer>(indices, 3);
-
-      m_triangle_va = std::make_shared<VertexArray>();
-      m_triangle_va->add_vertex_buffer(vertex_buffer);
-      m_triangle_va->set_index_buffer(index_buffer);
-
-      std::string vertex_src = R"(
-      #version 330 core
-
-      layout(location = 0) in vec3 a_Position;
-      layout(location = 1) in vec4 a_Color;
-
-      out vec4 v_Color;
-
-      void main()
-      {
-        gl_Position = vec4(a_Position, 1.0);
-
-        v_Color = a_Color;
-      })";
-
-      std::string fragment_src = R"(
-      #version 330 core
-
-      layout(location = 0) out vec4 color;
-
-      in vec4 v_Color;
-
-      void main()
-      {
-        color = v_Color;
-      })";
-
-      m_triangle_shader = std::make_shared<Shader>(vertex_src, fragment_src);
-    }
-
-    // square
-    {
-      float vertices[4 * 3] = { -.5f, -.5f, 0.f, //
-                                .5f,  -.5f, 0.f, //
-                                .5f,  .5f,  0.f, //
-                                -.5f, .5f,  0.f };
-      auto vertex_buffer    = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
-
-      BufferLayout layout = { { SharedDataType::Float3, "a_Position" } };
-      vertex_buffer->set_layout(layout);
-
-      uint32_t indices[6] = { 0, 1, 2, 2, 3, 0 };
-      auto index_buffer   = std::make_shared<IndexBuffer>(indices, 6);
-
-      m_square_va = std::make_shared<VertexArray>();
-      m_square_va->add_vertex_buffer(vertex_buffer);
-      m_square_va->set_index_buffer(index_buffer);
-
-      std::string vertex_src = R"(
-      #version 330 core
-
-      layout(location = 0) in vec3 a_Position;
-
-      void main()
-      {
-        gl_Position = vec4(a_Position, 1.0);
-      })";
-
-      std::string fragment_src = R"(
-      #version 330 core
-
-      layout(location = 0) out vec4 color;
-
-      void main()
-      {
-        color = vec4(1.0, 1.0, 1.0, 1.0);
-      })";
-
-      m_square_shader = std::make_shared<Shader>(vertex_src, fragment_src);
-    }
   }
 
   Application::~Application()
@@ -141,21 +52,6 @@ namespace sym_base
         continue;
       }
       else { m_timer.reset(); }
-
-      RenderCommand::set_clear_color({ .1f, .1f, .1f, 1.f });
-      RenderCommand::clear();
-
-      Renderer::begin_scene();
-      {
-        m_square_shader->bind();
-        Renderer::submit(m_square_va);
-        m_square_va->unbind();
-
-        m_triangle_shader->bind();
-        Renderer::submit(m_triangle_va);
-        m_triangle_va->unbind();
-      }
-      Renderer::end_scene();
 
       this->update(m_timer.get_dt());
 

@@ -1,6 +1,7 @@
 #include "Application.hh"
 #include "Input/Input.hh"
 #include "Simulation/GuiLayer.hh"
+#include "Simulation/MyLayer.hh"
 
 using namespace sym_base;
 using namespace sym;
@@ -8,7 +9,11 @@ using namespace sym;
 class SimulationApp : public Application
 {
  public:
-  SimulationApp(const ApplicationParams& params) : Application(params) { push_layer(new GuiLayer()); }
+  SimulationApp(const ApplicationParams& params) : Application(params)
+  {
+    push_layer(new GuiLayer());
+    push_layer(new MyLayer());
+  }
 
   ~SimulationApp() override {}
 
