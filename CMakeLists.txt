@@ -50,6 +50,9 @@ set(IMPLOT_LIBRARIES IMPLOT)
 target_include_directories(IMPLOT PUBLIC ${IMGUI_PATH})
 # -------------------------------------------------------------------------
 
+set(ASSETS_DIR "${CMAKE_SOURCE_DIR}/assets/")
+add_definitions(-DASSETS_DIR="${ASSETS_DIR}")
+
 file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/*.cc)
 
 include_directories(${PROJECT_SOURCE_DIR})

@@ -6,7 +6,7 @@ namespace sym_base
   class Shader
   {
    public:
-    // Shader(const std::string& file_path);
+    Shader(const std::string& file_path);
     Shader(const std::string& vertex_src, const std::string& fragment_src);
     ~Shader();
 
@@ -21,6 +21,11 @@ namespace sym_base
     void upload_uniform_float4(const std::string& name, const glm::vec4& value);
     void upload_uniform_mat3(const std::string& name, const glm::mat3& matrix);
     void upload_uniform_mat4(const std::string& name, const glm::mat4& matrix);
+
+   private:
+    std::string read_file(const std::string& file_path);
+    std::unordered_map<GLenum, std::string> preprocess(const std::string& source);
+    void compile(const std::unordered_map<GLenum, std::string>& shader_sources);
 
    private:
     uint32_t m_renderer_id;
