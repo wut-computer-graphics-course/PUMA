@@ -1,8 +1,6 @@
 #ifndef SYM_BASE_APPLICATION_HH
 #define SYM_BASE_APPLICATION_HH
 
-#include "pch.hh"
-
 #include "Events/Events.hh"
 #include "ImGui/ImGuiLayer.hh"
 #include "Timer.hh"

@@ -1,8 +1,6 @@
 #ifndef SYM_BASE_LAYERS_LAYERSTACK_HH
 #define SYM_BASE_LAYERS_LAYERSTACK_HH
 
-#include "pch.hh"
-
 #include "Layer.hh"
 
 namespace sym_base

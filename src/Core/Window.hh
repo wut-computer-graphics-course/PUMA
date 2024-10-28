@@ -1,8 +1,6 @@
 #ifndef SYM_BASE_WINDOW_HH
 #define SYM_BASE_WINDOW_HH
 
-#include "pch.hh"
-
 #include "Renderer/RenderingContext.hh"
 #include "Utils.hh"
 

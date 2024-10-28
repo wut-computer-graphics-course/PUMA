@@ -1,8 +1,6 @@
 #ifndef SYM_BASE_EVENT_HH
 #define SYM_BASE_EVENT_HH
 
-#include "pch.hh"
-
 #define SET_BIT(b) (1 << (b))
 
 namespace sym_base

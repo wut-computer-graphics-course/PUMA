@@ -1,8 +1,6 @@
 #ifndef SYM_BASE_TIMER_HH
 #define SYM_BASE_TIMER_HH
 
-#include "pch.hh"
-
 namespace sym_base
 {
   class Timer

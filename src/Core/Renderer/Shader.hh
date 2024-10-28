@@ -1,8 +1,6 @@
 #ifndef SYM_BASE_SHADER_HH
 #define SYM_BASE_SHADER_HH
 
-#include "pch.hh"
-
 namespace sym_base
 {
   class Shader
