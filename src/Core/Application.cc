@@ -1,5 +1,6 @@
 #include "Application.hh"
 #include "Layers/LayerStack.hh"
+#include "Renderer/Renderer.hh"
 
 namespace sym_base
 {
@@ -141,20 +142,20 @@ namespace sym_base
       }
       else { m_timer.reset(); }
 
-      // TODO: renderer
-      glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT);
+      RenderCommand::set_clear_color({ .1f, .1f, .1f, 1.f });
+      RenderCommand::clear();
 
-      m_square_va->bind();
-      m_square_shader->bind();
-      glDrawElements(GL_TRIANGLES, m_square_va->get_index_buffer()->get_count(), GL_UNSIGNED_INT, nullptr);
-      m_square_va->unbind();
+      Renderer::begin_scene();
+      {
+        m_square_shader->bind();
+        Renderer::submit(m_square_va);
+        m_square_va->unbind();
 
-      m_triangle_va->bind();
-      m_triangle_shader->bind();
-      glDrawElements(GL_TRIANGLES, m_triangle_va->get_index_buffer()->get_count(), GL_UNSIGNED_INT, nullptr);
-      m_triangle_va->unbind();
-      //
+        m_triangle_shader->bind();
+        Renderer::submit(m_triangle_va);
+        m_triangle_va->unbind();
+      }
+      Renderer::end_scene();
 
       this->update(m_timer.get_dt());
 
