@@ -19,7 +19,7 @@ namespace sym_base
 
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 410");
+    ImGui_ImplOpenGL3_Init("#version 450");
   }
 
   void ImGuiLayer::detach()
@@ -29,7 +29,15 @@ namespace sym_base
     ImGui::DestroyContext();
   }
 
-  void ImGuiLayer::handle_event(Event& event, float dt) { Layer::handle_event(event, dt); }
+  void ImGuiLayer::handle_event(Event& event, float dt)
+  {
+    if (m_block_events)
+    {
+      ImGuiIO& io = ImGui::GetIO();
+      event.handled |= event.is_type(Event::EventTypeMouse) & io.WantCaptureMouse;
+      event.handled |= event.is_type(Event::EventTypeKeyboard) & io.WantCaptureKeyboard;
+    }
+  }
 
   void ImGuiLayer::begin()
   {

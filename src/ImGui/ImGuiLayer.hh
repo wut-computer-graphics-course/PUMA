@@ -15,8 +15,13 @@ namespace sym_base
     void detach() override;
     void handle_event(Event& event, float dt) override;
 
+    void block_events(bool val) { m_block_events = val; }
+
     void begin();
     void end();
+
+   private:
+    bool m_block_events = true;
   };
 } // namespace sym_base
 
