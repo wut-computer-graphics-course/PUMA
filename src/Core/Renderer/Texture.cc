@@ -30,12 +30,16 @@ namespace sym_base
     ASSERT(internal_format & data_format, "Format not supported");
 
     glCreateTextures(GL_TEXTURE_2D, 1, &m_renderer_id);
-    glTextureStorage2D(m_renderer_id, 1, internal_format, m_width, m_height); // TODO: mipmaps, blending
 
-    glTextureParameteri(m_renderer_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);  // TODO: expose to api
-    glTextureParameteri(m_renderer_id, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // TODO: expose to api
+    int mip_levels = 1 + std::floor(std::log2(std::max(width, height)));
+    glTextureStorage2D(m_renderer_id, mip_levels, internal_format, m_width, m_height);
 
     glTextureSubImage2D(m_renderer_id, 0, 0, 0, m_width, m_height, data_format, GL_UNSIGNED_BYTE, data);
+
+    glTextureParameteri(m_renderer_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTextureParameteri(m_renderer_id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glGenerateTextureMipmap(m_renderer_id);
 
     stbi_image_free(data);
   }
