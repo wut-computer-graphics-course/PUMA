@@ -2,12 +2,12 @@
 #define SYM_BASE_MYLAYER_HH
 
 #include "Layers/Layer.hh"
-#include "Renderer/Buffer.hh"
 #include "Renderer/Camera/OrbitCamera.hh"
 #include "Renderer/Renderer.hh"
-#include "Renderer/Shader.hh"
-#include "Renderer/Texture.hh"
-#include "Renderer/VertexArray.hh"
+#include "Renderer/Resources/Buffer.hh"
+#include "Renderer/Resources/Shader.hh"
+#include "Renderer/Resources/Texture.hh"
+#include "Renderer/Resources/VertexArray.hh"
 
 using namespace sym_base;
 
@@ -108,6 +108,11 @@ namespace sym
     {
       ImGui::Begin("Settings");
       ImGui::ColorEdit3("Cube color", glm::value_ptr(m_cube.m_color));
+      ImGui::End();
+
+      ImGui::SetNextWindowSize(ImVec2(800, 600));
+      ImGui::Begin("Simulation window", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+
       ImGui::End();
     }
 

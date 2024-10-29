@@ -1,7 +1,7 @@
 #ifndef SYM_BASE_RENDERERAPI_HH
 #define SYM_BASE_RENDERERAPI_HH
 
-#include "VertexArray.hh"
+#include "Resources/VertexArray.hh"
 
 namespace sym_base
 {

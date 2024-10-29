@@ -2,7 +2,7 @@
 #define SYM_BASE_RENDERER_HH
 
 #include "RenderCommand.hh"
-#include "VertexArray.hh"
+#include "Resources/VertexArray.hh"
 
 namespace sym_base
 {
