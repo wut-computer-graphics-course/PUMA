@@ -142,22 +142,6 @@ namespace sym
           }
         }
         m_framebuffer.m_buffer->unbind();
-
-        // render onto screen
-        glm::vec2 offset = { (window.get_width() - m_framebuffer.m_width) / 2,
-                             (window.get_height() - m_framebuffer.m_height) / 2 };
-        rendering_context->set_viewport(offset.x, offset.y, m_framebuffer.m_width, m_framebuffer.m_height);
-        RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
-        RenderCommand::set_line_width(1);
-        RenderCommand::depth_buffering(false);
-        RenderCommand::anti_aliasing(false);
-        RenderCommand::face_culling(false);
-        RenderCommand::alpha_blending(false);
-        m_framebuffer.m_shader->bind();
-        m_framebuffer.m_texture->bind(0);
-        m_framebuffer.m_shader->upload_uniform_int("u_Texture", 0);
-        Renderer::submit(m_framebuffer.m_va);
-        m_framebuffer.m_va->unbind();
       }
       Renderer::end_scene();
     }
@@ -168,10 +152,13 @@ namespace sym
       ImGui::ColorEdit3("Cube color", glm::value_ptr(m_cube.m_color));
       ImGui::End();
 
-      //      ImGui::SetNextWindowSize(ImVec2(800, 600));
-      //      ImGui::Begin("Simulation window", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
-      //
-      //      ImGui::End();
+      auto window_size = ImVec2(m_framebuffer.m_width, m_framebuffer.m_height);
+      ImGui::SetNextWindowSize(window_size);
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+      ImGui::Begin("Simulation window", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+      ImGui::Image((ImTextureID)(intptr_t)m_framebuffer.m_texture->get_id(), window_size, ImVec2(0, 1), ImVec2(1, 0));
+      ImGui::End();
+      ImGui::PopStyleVar();
     }
 
     void handle_event(Event& event, float dt) override
