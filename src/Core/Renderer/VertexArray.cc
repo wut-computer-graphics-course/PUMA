@@ -1,4 +1,5 @@
 #include "VertexArray.hh"
+#include "Utils.hh"
 
 namespace sym_base
 {
@@ -28,7 +29,7 @@ namespace sym_base
 
   void VertexArray::add_vertex_buffer(const std::shared_ptr<VertexBuffer>& vertex_buffer)
   {
-    assert(!vertex_buffer->get_layout().get_elements().empty());
+    ASSERT(!vertex_buffer->get_layout().get_elements().empty(), "Vertex buffer must have non empty layout");
 
     glBindVertexArray(m_renderer_id);
     vertex_buffer->bind();

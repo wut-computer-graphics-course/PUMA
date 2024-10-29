@@ -104,10 +104,10 @@ namespace sym_base
     while (pos != std::string::npos)
     {
       size_t eol = source.find_first_of("\r\n", pos);
-      assert(eol != std::string::npos);
+      ASSERT(eol != std::string::npos, "Unable to preprocess shader source, missing end of line");
       size_t begin     = pos + type_token_length + 1;
       std::string type = source.substr(begin, eol - begin);
-      assert(shader_type_from_string(type));
+      ASSERT(shader_type_from_string(type), "Unable to preprocess shader source, unsupported shader type ");
 
       size_t next_line_pos = source.find_first_of("\r\n", eol);
       pos                  = source.find(type_token, next_line_pos);
