@@ -15,11 +15,6 @@ namespace sym
    public:
     SandboxApp(const ApplicationParams& params) : Application(params)
     {
-      RenderCommand::enable_depth_buffering();
-      RenderCommand::enable_anti_aliasing();
-      RenderCommand::enable_face_culling();
-      RenderCommand::enable_alpha_blending();
-
       push_layer(new GuiLayer());
       push_layer(new MyLayer());
     }

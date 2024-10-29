@@ -23,10 +23,10 @@ namespace sym_base
     void set_draw_primitive(const DrawPrimitive& primitive);
     void set_line_width(float width);
 
-    void enable_depth_buffering();
-    void enable_anti_aliasing();
-    void enable_face_culling();
-    void enable_alpha_blending();
+    void depth_buffering(bool on);
+    void anti_aliasing(bool on);
+    void face_culling(bool on);
+    void alpha_blending(bool on);
 
     void clear();
 

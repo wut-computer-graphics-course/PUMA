@@ -13,13 +13,13 @@ namespace sym_base
 
   void RenderCommand::set_line_width(float width) { m_renderer_api->set_line_width(width); }
 
-  void RenderCommand::enable_depth_buffering() { m_renderer_api->enable_depth_buffering(); }
+  void RenderCommand::depth_buffering(bool on) { m_renderer_api->depth_buffering(on); }
 
-  void RenderCommand::enable_anti_aliasing() { m_renderer_api->enable_anti_aliasing(); }
+  void RenderCommand::anti_aliasing(bool on) { m_renderer_api->anti_aliasing(on); }
 
-  void RenderCommand::enable_face_culling() { m_renderer_api->enable_face_culling(); }
+  void RenderCommand::face_culling(bool on) { m_renderer_api->face_culling(on); }
 
-  void RenderCommand::enable_alpha_blending() { m_renderer_api->enable_alpha_blending(); }
+  void RenderCommand::alpha_blending(bool on) { m_renderer_api->alpha_blending(on); }
 
   void RenderCommand::clear() { m_renderer_api->clear(); }
 

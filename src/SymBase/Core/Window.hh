@@ -29,6 +29,7 @@ namespace sym_base
     inline uint32_t get_width() const { return m_data.m_width; }
     inline uint32_t get_height() const { return m_data.m_height; }
     inline GLFWwindow* get_handle() const { return m_window; }
+    inline RenderingContext* get_rendering_context() const { return m_context; }
 
     inline bool is_vsync() const { return m_data.m_vsync; }
 

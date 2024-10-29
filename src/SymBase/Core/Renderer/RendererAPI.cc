@@ -10,25 +10,41 @@ namespace sym_base
 
   void RendererAPI::set_line_width(float width) { glLineWidth(width); }
 
-  void RendererAPI::enable_depth_buffering()
+  void RendererAPI::depth_buffering(bool on)
   {
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    if (on)
+    {
+      glEnable(GL_DEPTH_TEST);
+      glDepthFunc(GL_LESS);
+    }
+    else { glDisable(GL_DEPTH_TEST); }
   }
 
-  void RendererAPI::enable_anti_aliasing() { glEnable(GL_MULTISAMPLE); }
-
-  void RendererAPI::enable_face_culling()
+  void RendererAPI::anti_aliasing(bool on)
   {
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
+    if (on) { glEnable(GL_MULTISAMPLE); }
+    else { glDisable(GL_MULTISAMPLE); }
   }
 
-  void RendererAPI::enable_alpha_blending()
+  void RendererAPI::face_culling(bool on)
   {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    if (on)
+    {
+      glEnable(GL_CULL_FACE);
+      glCullFace(GL_BACK);
+      glFrontFace(GL_CCW);
+    }
+    else { glDisable(GL_CULL_FACE); }
+  }
+
+  void RendererAPI::alpha_blending(bool on)
+  {
+    if (on)
+    {
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
+    else { glDisable(GL_BLEND); }
   }
 
   void RendererAPI::clear() { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); }

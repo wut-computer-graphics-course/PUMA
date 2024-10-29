@@ -7,6 +7,20 @@
 
 namespace sym_base
 {
+  Texture2D::Texture2D(uint32_t width, uint32_t height) : m_width{ width }, m_height{ height }
+  {
+    glCreateTextures(GL_TEXTURE_2D, 1, &m_renderer_id);
+
+    glTextureStorage2D(m_renderer_id, 1, GL_RGB8, m_width, m_height);
+
+    glTextureSubImage2D(m_renderer_id, 0, 0, 0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
+    glTextureParameteri(m_renderer_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(m_renderer_id, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(m_renderer_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_renderer_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  }
+
   Texture2D::Texture2D(const std::string& file_path) : m_path{ ASSETS_DIR + file_path }
   {
     int width, height, channels;
@@ -38,6 +52,8 @@ namespace sym_base
 
     glTextureParameteri(m_renderer_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTextureParameteri(m_renderer_id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameteri(m_renderer_id, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(m_renderer_id, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     glGenerateTextureMipmap(m_renderer_id);
 

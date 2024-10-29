@@ -22,6 +22,7 @@
 #include "Core/Renderer/RendererAPI.hh"
 #include "Core/Renderer/RenderingContext.hh"
 #include "Core/Renderer/Resources/Buffer.hh"
+#include "Core/Renderer/Resources/Framebuffer.hh"
 #include "Core/Renderer/Resources/Shader.hh"
 #include "Core/Renderer/Resources/Texture.hh"
 #include "Core/Renderer/Resources/VertexArray.hh"
