@@ -6,6 +6,7 @@
 #include "Renderer/Camera/OrbitCamera.hh"
 #include "Renderer/Renderer.hh"
 #include "Renderer/Shader.hh"
+#include "Renderer/Texture.hh"
 #include "Renderer/VertexArray.hh"
 
 using namespace sym_base;
@@ -17,39 +18,39 @@ namespace sym
    public:
     MyLayer()
     {
-      // triangle
-      {
-        float vertices[3 * (3 + 4)] = { -.5f, -.5f, 0.f, 1.f, 0.f, 0.f, 1.f, //
-                                        .5f,  -.5f, 0.f, 0.f, 1.f, 0.f, 1.f, //
-                                        0.f,  .5f,  0.f, 0.f, 0.f, 1.f, 1.f };
-        auto vertex_buffer          = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
+      BufferLayout layout = { { SharedDataType::Float3, "a_Position" },
+                              { SharedDataType::Float3, "a_Color" },
+                              { SharedDataType::Float2, "a_TexCoord" } };
 
-        BufferLayout layout = { { SharedDataType::Float3, "a_Position" }, { SharedDataType::Float4, "a_Color" } };
+      // square
+      {
+        Vertex vertices[4] = { { { -.5f, -.5f, 0.f }, {}, { 0.f, 0.f } },
+                               { { .5f, -.5f, 0.f }, {}, { 1.f, 0.f } },
+                               { { .5f, .5f, 0.f }, {}, { 1.f, 1.f } },
+                               { { -.5f, .5f, 0.f }, {}, { 0.f, 1.f } } };
+
+        auto vertex_buffer = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
         vertex_buffer->set_layout(layout);
 
-        uint32_t indices[3] = { 0, 1, 2 };
-        auto index_buffer   = std::make_shared<IndexBuffer>(indices, 3);
+        uint32_t indices[6] = { 0, 1, 2, 2, 3, 0 };
+        auto index_buffer   = std::make_shared<IndexBuffer>(indices, sizeof(indices) / sizeof(uint32_t));
 
-        m_triangle.m_va = std::make_shared<VertexArray>();
-        m_triangle.m_va->add_vertex_buffer(vertex_buffer);
-        m_triangle.m_va->set_index_buffer(index_buffer);
+        m_square.m_va = std::make_shared<VertexArray>();
+        m_square.m_va->add_vertex_buffer(vertex_buffer);
+        m_square.m_va->set_index_buffer(index_buffer);
 
-        m_triangle.m_shader = std::make_shared<Shader>("shaders/triangle.glsl");
+        m_square.m_shader = std::make_shared<Shader>("shaders/square.glsl");
+
+        m_square.m_texture = std::make_shared<Texture2D>("textures/image.jpeg");
       }
 
       // cube
       {
-        float vertices[4 * 3 * 2] = { -.5f, -.5f, .5f,  //
-                                      .5f,  -.5f, .5f,  //
-                                      .5f,  .5f,  .5f,  //
-                                      -.5f, .5f,  .5f,  //
-                                      -.5f, -.5f, -.5f, //
-                                      .5f,  -.5f, -.5f, //
-                                      .5f,  .5f,  -.5f, //
-                                      -.5f, .5f,  -.5f };
-        auto vertex_buffer        = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
-
-        BufferLayout layout = { { SharedDataType::Float3, "a_Position" } };
+        Vertex vertices[8] = {
+          { { -.5f, -.5f, .5f } },  { { .5f, -.5f, .5f } },  { { .5f, .5f, .5f } },  { { -.5f, .5f, .5f } },
+          { { -.5f, -.5f, -.5f } }, { { .5f, -.5f, -.5f } }, { { .5f, .5f, -.5f } }, { { -.5f, .5f, -.5f } },
+        };
+        auto vertex_buffer = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
         vertex_buffer->set_layout(layout);
 
         uint32_t indices[] = { 0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 3, 7, 2, 6 };
@@ -87,15 +88,17 @@ namespace sym
           m_cube.m_va->unbind();
         }
 
-        // triangle
+        // square
         {
-          m_triangle.m_shader->bind();
+          m_square.m_shader->bind();
           auto mvp = m_camera->get_projection() * m_camera->get_view();
-          m_triangle.m_shader->upload_uniform_mat4("u_MVP", mvp);
+          m_square.m_shader->upload_uniform_mat4("u_MVP", mvp);
+          m_square.m_texture->bind(0);
+          m_square.m_shader->upload_uniform_int("u_Texture", 0);
           RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
           RenderCommand::set_line_width(1);
-          Renderer::submit(m_triangle.m_va);
-          m_triangle.m_va->unbind();
+          Renderer::submit(m_square.m_va);
+          m_square.m_va->unbind();
         }
       }
       Renderer::end_scene();
@@ -129,11 +132,19 @@ namespace sym
     }
 
    private:
+    struct Vertex
+    {
+      glm::vec3 m_position;
+      glm::vec3 m_color;
+      glm::vec2 m_tex_coord;
+    };
+
     struct
     {
       std::shared_ptr<VertexArray> m_va;
       std::shared_ptr<Shader> m_shader;
-    } m_triangle;
+      std::shared_ptr<Texture2D> m_texture;
+    } m_square;
 
     struct
     {

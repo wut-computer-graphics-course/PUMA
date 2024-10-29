@@ -50,6 +50,12 @@ set(IMPLOT_LIBRARIES IMPLOT)
 target_include_directories(IMPLOT PUBLIC ${IMGUI_PATH})
 # -------------------------------------------------------------------------
 
+# ------------------------------ INCLUDE STB ------------------------------
+set(STB_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/external/stb_image")
+include_directories(${STB_INCLUDE_DIR})
+link_directories(${STB_INCLUDE_DIR})
+# -------------------------------------------------------------------------
+
 set(ASSETS_DIR "${CMAKE_SOURCE_DIR}/assets/")
 add_definitions(-DASSETS_DIR="${ASSETS_DIR}")
 
