@@ -13,4 +13,6 @@ namespace sym_base
 
   void RenderingContext::swap_buffers() { glfwSwapBuffers(m_window_handle); }
 
+  void RenderingContext::set_viewport(int x, int y, int width, int height) { glViewport(x, y, width, height); }
+
 } // namespace sym_base

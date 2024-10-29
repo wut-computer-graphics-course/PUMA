@@ -12,6 +12,7 @@ namespace sym_base
 
     void init();
     void swap_buffers();
+    void set_viewport(int x, int y, int width, int height);
 
    private:
     GLFWwindow* m_window_handle;

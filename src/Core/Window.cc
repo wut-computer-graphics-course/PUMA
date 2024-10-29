@@ -65,13 +65,13 @@ namespace sym_base
     glfwSetFramebufferSizeCallback(m_window,
                                    [](GLFWwindow* window, int width, int height)
                                    {
-                                     auto* data     = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
-                                     data->m_width  = width;
-                                     data->m_height = height;
+                                     auto* app_window = static_cast<Window*>(glfwGetWindowUserPointer(window));
+                                     app_window->m_data.m_width  = width;
+                                     app_window->m_data.m_height = height;
                                      WindowResizedEvent event{ (uint32_t)width, (uint32_t)height };
-                                     data->m_event_callback(event);
+                                     app_window->m_data.m_event_callback(event);
 
-                                     glViewport(0, 0, width, height); // TODO:
+                                     app_window->m_context->set_viewport(0, 0, width, height);
                                    });
     glfwSetScrollCallback(m_window,
                           [](GLFWwindow* window, double x_offset, double y_offset)
