@@ -19,7 +19,10 @@ namespace sym_base
 
   void RenderCommand::enable_face_culling() { m_renderer_api->enable_face_culling(); }
 
+  void RenderCommand::enable_alpha_blending() { m_renderer_api->enable_alpha_blending(); }
+
   void RenderCommand::clear() { m_renderer_api->clear(); }
+
   void RenderCommand::draw_indexed(const std::shared_ptr<VertexArray>& vertex_array)
   {
     m_renderer_api->draw_indexed(vertex_array);

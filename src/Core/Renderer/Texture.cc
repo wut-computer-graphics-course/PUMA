@@ -16,13 +16,26 @@ namespace sym_base
     m_width  = width;
     m_height = height;
 
+    GLenum internal_format = 0, data_format = 0;
+    if (channels == 4)
+    {
+      internal_format = GL_RGBA8;
+      data_format     = GL_RGBA;
+    }
+    else if (channels == 3)
+    {
+      internal_format = GL_RGB8;
+      data_format     = GL_RGB;
+    }
+    ASSERT(internal_format & data_format, "Format not supported");
+
     glCreateTextures(GL_TEXTURE_2D, 1, &m_renderer_id);
-    glTextureStorage2D(m_renderer_id, 1, GL_RGB8, m_width, m_height); // TODO: mipmaps, blending
+    glTextureStorage2D(m_renderer_id, 1, internal_format, m_width, m_height); // TODO: mipmaps, blending
 
     glTextureParameteri(m_renderer_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR);  // TODO: expose to api
     glTextureParameteri(m_renderer_id, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // TODO: expose to api
 
-    glTextureSubImage2D(m_renderer_id, 0, 0, 0, m_width, m_height, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glTextureSubImage2D(m_renderer_id, 0, 0, 0, m_width, m_height, data_format, GL_UNSIGNED_BYTE, data);
 
     stbi_image_free(data);
   }

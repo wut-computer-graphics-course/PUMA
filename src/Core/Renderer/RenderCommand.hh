@@ -15,6 +15,7 @@ namespace sym_base
     static void enable_depth_buffering();
     static void enable_anti_aliasing();
     static void enable_face_culling();
+    static void enable_alpha_blending();
 
     static void clear();
 

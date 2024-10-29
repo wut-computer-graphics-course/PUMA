@@ -41,7 +41,7 @@ namespace sym
 
         m_square.m_shader = std::make_shared<Shader>("shaders/square.glsl");
 
-        m_square.m_texture = std::make_shared<Texture2D>("textures/image.jpeg");
+        m_square.m_texture = std::make_shared<Texture2D>("textures/leaf.png");
       }
 
       // cube

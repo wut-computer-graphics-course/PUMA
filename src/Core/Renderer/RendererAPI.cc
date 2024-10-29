@@ -25,7 +25,14 @@ namespace sym_base
     glFrontFace(GL_CCW);
   }
 
+  void RendererAPI::enable_alpha_blending()
+  {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  }
+
   void RendererAPI::clear() { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); }
+
   void RendererAPI::draw_indexed(const std::shared_ptr<VertexArray>& vertex_array)
   {
     glDrawElements(static_cast<GLenum>(current_draw_primitive),
