@@ -1,7 +1,7 @@
 #ifndef SYM_BASE_LAYERS_LAYER_HH
 #define SYM_BASE_LAYERS_LAYER_HH
 
-#include "Events/Events.hh"
+#include "Core/Events/Events.hh"
 
 namespace sym_base
 {

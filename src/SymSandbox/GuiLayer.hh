@@ -1,7 +1,8 @@
 #ifndef SYM_BASE_GUILAYER_HH
 #define SYM_BASE_GUILAYER_HH
 
-#include "Layers/Layer.hh"
+#include "SymBase.hh"
+#include "pch.hh"
 
 namespace sym
 {

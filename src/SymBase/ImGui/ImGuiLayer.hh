@@ -1,7 +1,7 @@
 #ifndef SYM_BASE_IMGUILAYER_HH
 #define SYM_BASE_IMGUILAYER_HH
 
-#include "Layers/Layer.hh"
+#include "Core/Layers/Layer.hh"
 
 namespace sym_base
 {

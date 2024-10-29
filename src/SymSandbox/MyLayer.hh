@@ -1,13 +1,8 @@
 #ifndef SYM_BASE_MYLAYER_HH
 #define SYM_BASE_MYLAYER_HH
 
-#include "Layers/Layer.hh"
-#include "Renderer/Camera/OrbitCamera.hh"
-#include "Renderer/Renderer.hh"
-#include "Renderer/Resources/Buffer.hh"
-#include "Renderer/Resources/Shader.hh"
-#include "Renderer/Resources/Texture.hh"
-#include "Renderer/Resources/VertexArray.hh"
+#include "SymBase.hh"
+#include "pch.hh"
 
 using namespace sym_base;
 

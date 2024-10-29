@@ -1,4 +1,4 @@
-#include "Sandbox/SandboxApp.hh"
+#include "SymSandbox/SandboxApp.hh"
 
 int main()
 {
@@ -8,7 +8,7 @@ int main()
                         .m_samples      = 4,
                         .m_vsync        = true,
                         .m_refresh_rate = 1 / 60.f,
-                        .m_clear_color  = { .1f, .1f, .1f, .1f } });
+                        .m_clear_color  = { 1.f, 0.f, 1.f, .1f } });
   {
     app.run();
   }

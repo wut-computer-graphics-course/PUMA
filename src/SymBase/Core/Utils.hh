@@ -23,6 +23,8 @@
 #define NS_IN_S  1000000000L
 #define NS_IN_MS 1000000L
 
+#include <functional>
+
 namespace sym_base
 {
   class Event;

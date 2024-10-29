@@ -1,13 +1,10 @@
 #ifndef SYM_BASE_SANDBOXAPP_HH
 #define SYM_BASE_SANDBOXAPP_HH
 
-#include <memory>
+#include "SymBase.hh"
 
-#include "Application.hh"
 #include "GuiLayer.hh"
-#include "Input/Input.hh"
 #include "MyLayer.hh"
-#include "Renderer/Camera/OrbitCamera.hh"
 
 using namespace sym_base;
 

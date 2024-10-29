@@ -3,6 +3,8 @@
 
 #include "Event.hh"
 
+#include <cstdint>
+
 namespace sym_base
 {
   /// @brief Event representing closing of window.

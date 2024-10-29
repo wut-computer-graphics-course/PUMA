@@ -1,6 +1,8 @@
 #ifndef SYM_BASE_BUFFER_HH
 #define SYM_BASE_BUFFER_HH
 
+#include <glad/glad.h>
+
 namespace sym_base
 {
   enum class SharedDataType

@@ -3,6 +3,8 @@
 
 #define SET_BIT(b) (1 << (b))
 
+#include <functional>
+
 namespace sym_base
 {
   /// @brief Abstract interface representing event that is passed around in the engine.
