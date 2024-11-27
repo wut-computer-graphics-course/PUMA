@@ -24,7 +24,7 @@ namespace sym
                                { { .5f, .5f, 0.f }, {}, { 1.f, 1.f } },
                                { { -.5f, .5f, 0.f }, {}, { 0.f, 1.f } } };
 
-        auto vertex_buffer = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
+        auto vertex_buffer = std::make_shared<VertexBuffer>(vertices, sizeof(vertices), sizeof(Vertex));
         vertex_buffer->set_layout(layout);
 
         uint32_t indices[6] = { 0, 1, 2, 2, 3, 0 };
@@ -45,7 +45,7 @@ namespace sym
           { { -.5f, -.5f, .5f } },  { { .5f, -.5f, .5f } },  { { .5f, .5f, .5f } },  { { -.5f, .5f, .5f } },
           { { -.5f, -.5f, -.5f } }, { { .5f, -.5f, -.5f } }, { { .5f, .5f, -.5f } }, { { -.5f, .5f, -.5f } },
         };
-        auto vertex_buffer = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
+        auto vertex_buffer = std::make_shared<VertexBuffer>(vertices, sizeof(vertices), sizeof(Vertex));
         vertex_buffer->set_layout(layout);
 
         uint32_t indices[] = { 0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 3, 7, 2, 6 };
@@ -68,7 +68,7 @@ namespace sym
           -1.f, 1.f,  0.f, 1.f  //
         };
 
-        auto vertex_buffer = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
+        auto vertex_buffer = std::make_shared<VertexBuffer>(vertices, sizeof(vertices), sizeof(float));
 
         layout = { { SharedDataType::Float2, "a_Position" }, { SharedDataType::Float2, "a_TexCoord" } };
         vertex_buffer->set_layout(layout);
