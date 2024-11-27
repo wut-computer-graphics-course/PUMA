@@ -204,6 +204,7 @@ static GLenum shader_type_from_string(const std::string& type)
 {
   if (type == "vertex") { return GL_VERTEX_SHADER; }
   if (type == "fragment") { return GL_FRAGMENT_SHADER; }
+  if (type == "geometry") { return GL_GEOMETRY_SHADER; }
 
   return 0;
 }
