@@ -23,6 +23,8 @@ namespace sym_base
 
   void RenderCommand::clear() { m_renderer_api->clear(); }
 
+  void RenderCommand::draw(const std::shared_ptr<VertexArray>& vertex_array) { m_renderer_api->draw(vertex_array); }
+
   void RenderCommand::draw_indexed(const std::shared_ptr<VertexArray>& vertex_array)
   {
     m_renderer_api->draw_indexed(vertex_array);

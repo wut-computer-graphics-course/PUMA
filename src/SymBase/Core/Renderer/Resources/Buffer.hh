@@ -66,7 +66,7 @@ namespace sym_base
   class VertexBuffer
   {
    public:
-    VertexBuffer(void* vertices, uint32_t size, BufferType type = BufferType::STATIC);
+    VertexBuffer(void* vertices, uint32_t size, uint32_t instance_size, BufferType type = BufferType::STATIC);
     ~VertexBuffer();
 
     void bind() const;
@@ -75,11 +75,13 @@ namespace sym_base
 
     inline const BufferLayout& get_layout() const { return m_layout; }
     inline void set_layout(const BufferLayout& layout) { m_layout = layout; };
+    inline uint32_t get_count() const { return m_count; }
 
    private:
     uint32_t m_renderer_id;
     BufferLayout m_layout;
     BufferType m_type;
+    uint32_t m_count;
   };
 
   class IndexBuffer

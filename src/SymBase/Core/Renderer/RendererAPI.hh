@@ -30,6 +30,7 @@ namespace sym_base
 
     void clear();
 
+    void draw(const std::shared_ptr<VertexArray>& vertex_array);
     void draw_indexed(const std::shared_ptr<VertexArray>& vertex_array);
   };
 } // namespace sym_base

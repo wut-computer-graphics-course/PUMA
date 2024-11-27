@@ -88,7 +88,8 @@ namespace sym_base
 
   ////////////////////////////////////////////////// VertexBuffer //////////////////////////////////////////////////
 
-  VertexBuffer::VertexBuffer(void* vertices, uint32_t size, BufferType type) : m_type{ type }
+  VertexBuffer::VertexBuffer(void* vertices, uint32_t size, uint32_t instance_size, BufferType type) :
+      m_type{ type }, m_count{ size / instance_size }
   {
     glCreateBuffers(1, &m_renderer_id);
     glBindBuffer(GL_ARRAY_BUFFER, m_renderer_id);

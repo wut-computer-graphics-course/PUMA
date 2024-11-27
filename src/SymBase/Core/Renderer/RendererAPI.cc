@@ -49,6 +49,14 @@ namespace sym_base
 
   void RendererAPI::clear() { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); }
 
+  void RendererAPI::draw(const std::shared_ptr<VertexArray>& vertex_array)
+  {
+    for (auto& vertex_buffer : vertex_array->get_vertex_buffers())
+    {
+      glDrawArrays(static_cast<GLenum>(current_draw_primitive), 0, vertex_buffer->get_count());
+    }
+  }
+
   void RendererAPI::draw_indexed(const std::shared_ptr<VertexArray>& vertex_array)
   {
     glDrawElements(static_cast<GLenum>(current_draw_primitive),

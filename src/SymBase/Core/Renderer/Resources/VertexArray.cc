@@ -14,7 +14,7 @@ namespace sym_base
     {
       buffer->bind();
     }
-    m_index_buffer->bind();
+    if (m_index_buffer) { m_index_buffer->bind(); }
   }
 
   void VertexArray::unbind() const

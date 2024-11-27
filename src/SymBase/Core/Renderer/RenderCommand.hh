@@ -19,6 +19,7 @@ namespace sym_base
 
     static void clear();
 
+    static void draw(const std::shared_ptr<VertexArray>& vertex_array);
     static void draw_indexed(const std::shared_ptr<VertexArray>& vertex_array);
 
    private:
