@@ -1,5 +1,5 @@
 #include "Timer.hh"
-#include "Utils.hh"
+#include "Clock.hh"
 
 namespace sym_base
 {
@@ -7,11 +7,11 @@ namespace sym_base
 
   void Timer::tick()
   {
-    auto current_time = std::chrono::high_resolution_clock::now();
+    auto current_time = Clock::chrono_now();
     auto duration =
         std::chrono::duration<uint64_t, std::chrono::nanoseconds::period>(current_time - m_start_time).count();
     m_delta_time = (float)duration / NS_IN_S;
   }
 
-  void Timer::reset() { m_start_time = std::chrono::high_resolution_clock::now(); }
+  void Timer::reset() { m_start_time = Clock::chrono_now(); }
 } // namespace sym_base

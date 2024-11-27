@@ -22,6 +22,7 @@
 
 #define NS_IN_S  1000000000L
 #define NS_IN_MS 1000000L
+#define MS_IN_S  1000
 
 #include <functional>
 
