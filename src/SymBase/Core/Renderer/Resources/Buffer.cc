@@ -1,4 +1,5 @@
 #include "Buffer.hh"
+#include "Utils.hh"
 
 static uint32_t shared_data_type_size(sym_base::SharedDataType type);
 namespace sym_base
@@ -87,11 +88,12 @@ namespace sym_base
 
   ////////////////////////////////////////////////// VertexBuffer //////////////////////////////////////////////////
 
-  VertexBuffer::VertexBuffer(void* vertices, uint32_t size)
+  VertexBuffer::VertexBuffer(void* vertices, uint32_t size, BufferType type) : m_type{ type }
   {
     glCreateBuffers(1, &m_renderer_id);
     glBindBuffer(GL_ARRAY_BUFFER, m_renderer_id);
-    glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, size, vertices, (GLenum)m_type);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
 
   VertexBuffer::~VertexBuffer() { glDeleteBuffers(1, &m_renderer_id); }
@@ -100,6 +102,14 @@ namespace sym_base
 
   void VertexBuffer::unbind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
 
+  void VertexBuffer::send_data(uint32_t offset, uint32_t size, void* data)
+  {
+    ASSERT(m_type == BufferType::DYNAMIC, "Buffer needs to be DYNAMIC in order to send data");
+    glBindBuffer(GL_ARRAY_BUFFER, m_renderer_id);
+    glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+  }
+
   ////////////////////////////////////////////////// IndexBuffer //////////////////////////////////////////////////
 
   IndexBuffer::IndexBuffer(uint32_t* indices, uint32_t count) : m_count{ count }
@@ -107,6 +117,7 @@ namespace sym_base
     glCreateBuffers(1, &m_renderer_id);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_renderer_id);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
   }
 
   IndexBuffer::~IndexBuffer() { glDeleteBuffers(1, &m_renderer_id); }

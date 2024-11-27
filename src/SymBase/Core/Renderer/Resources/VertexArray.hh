@@ -18,6 +18,7 @@ namespace sym_base
     void set_index_buffer(const std::shared_ptr<IndexBuffer>& index_buffer);
 
     inline const std::vector<std::shared_ptr<VertexBuffer>>& get_vertex_buffers() const { return m_vertex_buffers; }
+    inline const std::shared_ptr<VertexBuffer>& get_vertex_buffer(uint32_t idx) const { return m_vertex_buffers[idx]; }
     inline const std::shared_ptr<IndexBuffer>& get_index_buffer() const { return m_index_buffer; }
 
    private:

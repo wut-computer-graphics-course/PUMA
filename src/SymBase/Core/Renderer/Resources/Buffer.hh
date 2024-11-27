@@ -57,14 +57,21 @@ namespace sym_base
     uint32_t m_stride = 0;
   };
 
+  enum class BufferType
+  {
+    STATIC  = 0x88E4,
+    DYNAMIC = 0x88E8
+  };
+
   class VertexBuffer
   {
    public:
-    VertexBuffer(void* vertices, uint32_t size);
+    VertexBuffer(void* vertices, uint32_t size, BufferType type = BufferType::STATIC);
     ~VertexBuffer();
 
     void bind() const;
     void unbind() const;
+    void send_data(uint32_t offset, uint32_t size, void* data);
 
     inline const BufferLayout& get_layout() const { return m_layout; }
     inline void set_layout(const BufferLayout& layout) { m_layout = layout; };
@@ -72,6 +79,7 @@ namespace sym_base
    private:
     uint32_t m_renderer_id;
     BufferLayout m_layout;
+    BufferType m_type;
   };
 
   class IndexBuffer

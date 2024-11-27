@@ -49,6 +49,9 @@ namespace sym_base
     }
 
     m_vertex_buffers.push_back(vertex_buffer);
+
+    vertex_buffer->unbind();
+    glBindVertexArray(0);
   }
 
   void VertexArray::set_index_buffer(const std::shared_ptr<IndexBuffer>& index_buffer)
@@ -57,5 +60,8 @@ namespace sym_base
     index_buffer->bind();
 
     m_index_buffer = index_buffer;
+
+    index_buffer->unbind();
+    glBindVertexArray(0);
   }
 } // namespace sym_base
