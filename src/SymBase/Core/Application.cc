@@ -1,10 +1,11 @@
 #include "Application.hh"
+#include "Clock.hh"
 #include "Layers/LayerStack.hh"
 #include "Renderer/RenderCommand.hh"
 
 namespace sym_base
 {
-  static float s_refresh_rate    = 0;
+  static float s_refresh_rate    = 1 / 60.f;
   static glm::vec4 s_clear_color = { 0, 0, 0, 0 };
 
   Application* Application::s_instance          = nullptr;
@@ -75,6 +76,47 @@ namespace sym_base
 
       m_window->update();
     }
+
+    end_simulation();
+  }
+
+  void Application::create_simulation(float period, const std::function<void(void)>& func, LoopStatus status)
+  {
+    int period_in_ms  = period * MS_IN_S;
+    m_simulation_loop = std::make_unique<TimedLoop>(period_in_ms, func, status);
+  }
+
+  void Application::end_simulation()
+  {
+    if (m_simulation_thread && m_simulation_thread->joinable())
+    {
+      m_simulation_loop->set_status(LoopStatus::exiting);
+      m_simulation_thread->join();
+    }
+  }
+
+  void Application::reset_simulation()
+  {
+    end_simulation();
+    Clock::reset();
+    m_simulation_loop->set_status(LoopStatus::idle);
+  }
+  void Application::pause_simulation()
+  {
+    Clock::pause();
+    m_simulation_loop->set_status(LoopStatus::idle);
+  }
+  void Application::resume_simulation()
+  {
+    Clock::resume();
+    m_simulation_loop->set_status(LoopStatus::running);
+  }
+  void Application::start_simulation()
+  {
+    reset_simulation();
+    Clock::start();
+    m_simulation_loop->set_status(LoopStatus::running);
+    m_simulation_thread = std::make_unique<std::thread>([&]() { m_simulation_loop->go(); });
   }
 
   void Application::update(float dt)
@@ -106,5 +148,6 @@ namespace sym_base
       if (e.handled) { break; }
     }
   }
+
   void Application::sleep(float t) { std::this_thread::sleep_for(std::chrono::nanoseconds((int)(t * NS_IN_S))); }
 } // namespace sym_base
