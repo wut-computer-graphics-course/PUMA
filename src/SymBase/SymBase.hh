@@ -27,4 +27,7 @@
 #include "Core/Renderer/Resources/Texture.hh"
 #include "Core/Renderer/Resources/VertexArray.hh"
 
+/* ========================= Timed Loop ========================= */
+#include "TimedLoop/TimedLoop.hh"
+
 #endif // SIMULATIONAPP_SYMBASE_HH
