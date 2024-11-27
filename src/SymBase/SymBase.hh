@@ -3,6 +3,8 @@
 
 /* ========================= Core ========================= */
 #include "Core/Application.hh"
+#include "Core/Clock.hh"
+#include "Core/Timer.hh"
 #include "Core/Utils.hh"
 
 /* ========================= Events ========================= */
@@ -26,6 +28,9 @@
 #include "Core/Renderer/Resources/Shader.hh"
 #include "Core/Renderer/Resources/Texture.hh"
 #include "Core/Renderer/Resources/VertexArray.hh"
+
+/* ========================= ImGui ========================= */
+#include "ImGui/ImGuiBuild.hh"
 
 /* ========================= Timed Loop ========================= */
 #include "TimedLoop/TimedLoop.hh"
