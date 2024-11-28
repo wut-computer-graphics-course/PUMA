@@ -4,7 +4,9 @@
 #include "SymBase.hh"
 
 #include "DockSpaceLayer.hh"
+#include "InputLayer.hh"
 #include "MyLayer.hh"
+#include "SimulationContext.hh"
 
 using namespace sym_base;
 
@@ -15,7 +17,13 @@ namespace sym
    public:
     SandboxApp(const ApplicationParams& params) : Application(params)
     {
+      // setup simulation
+      SimulationContext::s_camera = std::make_shared<OrbitCamera>();
+      SimulationContext::s_camera->set_position({ 0, 0, 5 });
+
+      // create application layers
       push_layer(new MyLayer());
+      push_layer(new InputLayer());
       push_layer(new DockSpaceLayer());
     }
 
