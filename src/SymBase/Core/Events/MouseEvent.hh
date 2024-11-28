@@ -1,5 +1,5 @@
-#ifndef ESPERT_CORE_MOUSEEVENT_H
-#define ESPERT_CORE_MOUSEEVENT_H
+#ifndef SYM_BASE_MOUSEEVENT_H
+#define SYM_BASE_MOUSEEVENT_H
 
 #include "Event.hh"
 
@@ -107,4 +107,4 @@ namespace sym_base
   };
 } // namespace sym_base
 
-#endif // ESPERT_CORE_MOUSEEVENT_H
+#endif // SYM_BASE_MOUSEEVENT_H

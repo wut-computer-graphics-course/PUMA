@@ -62,6 +62,48 @@ namespace sym_base
                                  data->m_event_callback(event);
                                });
     glfwSetErrorCallback(glfw_error_callback);
+    glfwSetKeyCallback(m_window,
+                       [](GLFWwindow* window, int key, int scancode, int action, int mods)
+                       {
+                         auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+
+                         switch (action)
+                         {
+                         case GLFW_PRESS:
+                         {
+                           KeyPressedEvent event(key, false);
+                           data->m_event_callback(event);
+                           break;
+                         }
+                         case GLFW_RELEASE:
+                         {
+                           KeyReleasedEvent event(key);
+                           data->m_event_callback(event);
+                           break;
+                         }
+                         }
+                       });
+    glfwSetMouseButtonCallback(m_window,
+                               [](GLFWwindow* window, int button, int action, int mods)
+                               {
+                                 auto* data = static_cast<WindowData*>(glfwGetWindowUserPointer(window));
+
+                                 switch (action)
+                                 {
+                                 case GLFW_PRESS:
+                                 {
+                                   MouseButtonPressedEvent event(button);
+                                   data->m_event_callback(event);
+                                   break;
+                                 }
+                                 case GLFW_RELEASE:
+                                 {
+                                   MouseButtonReleasedEvent event(button);
+                                   data->m_event_callback(event);
+                                   break;
+                                 }
+                                 }
+                               });
     glfwSetFramebufferSizeCallback(m_window,
                                    [](GLFWwindow* window, int width, int height)
                                    {
@@ -81,7 +123,6 @@ namespace sym_base
                             MouseScrolledEvent event((float)x_offset, (float)y_offset);
                             data->m_event_callback(event);
                           });
-
     glfwSetCursorPosCallback(m_window,
                              [](GLFWwindow* window, double x_pos, double y_pos)
                              {
