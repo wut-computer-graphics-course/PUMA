@@ -83,7 +83,7 @@ namespace sym
 
         m_framebuffer.m_shader = std::make_shared<Shader>("shaders/framebuffer.glsl");
 
-        m_framebuffer.m_texture = std::make_shared<Texture2D>(m_framebuffer.m_width, m_framebuffer.m_height);
+        m_framebuffer.m_texture = std::make_shared<Texture2D>(m_framebuffer.m_tex_width, m_framebuffer.m_tex_height);
 
         m_framebuffer.m_buffer = std::make_shared<Framebuffer>();
         m_framebuffer.m_buffer->set_color_buffer(m_framebuffer.m_texture);
@@ -97,13 +97,15 @@ namespace sym
 
     void update(float dt) override
     {
-      auto& window = Application::get().get_window();
-      m_camera->set_perspective(M_PI / 4, window.get_width() / (float)window.get_height(), 1.f, 100.f);
+      handle_keyboard_input(dt);
+
+      m_camera->set_perspective(M_PI / 4, m_framebuffer.m_win_width / m_framebuffer.m_win_height, 1.f, 100.f);
+      auto& window           = Application::get().get_window();
       auto rendering_context = window.get_rendering_context();
 
       Renderer::begin_scene();
       {
-        rendering_context->set_viewport(0, 0, m_framebuffer.m_width, m_framebuffer.m_height);
+        rendering_context->set_viewport(0, 0, m_framebuffer.m_tex_width, m_framebuffer.m_tex_height);
 
         // render onto framebuffer
         m_framebuffer.m_buffer->bind();
@@ -150,37 +152,38 @@ namespace sym
     virtual void imgui_update(float dt)
     {
       ImGui::Begin(DockWinId::s_settings.c_str());
-      ImGui::ColorEdit3("Cube color", glm::value_ptr(m_cube.m_color));
+      {
+        ImGui::ColorEdit3("Cube color", glm::value_ptr(m_cube.m_color));
+      }
       ImGui::End();
 
       ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
       ImGui::Begin(DockWinId::s_content.c_str(), nullptr, ImGuiWindowFlags_NoScrollbar);
-      ImGui::Image((ImTextureID)(intptr_t)m_framebuffer.m_texture->get_id(),
-                   ImGui::GetWindowSize(),
-                   ImVec2(0, 1),
-                   ImVec2(1, 0));
+      {
+        ImVec2 win_size            = ImGui::GetWindowSize();
+        m_framebuffer.m_win_width  = win_size.x;
+        m_framebuffer.m_win_height = win_size.y;
+
+        ImGui::Image((ImTextureID)(intptr_t)m_framebuffer.m_texture->get_id(), win_size, ImVec2(0, 1), ImVec2(1, 0));
+      }
       ImGui::End();
       ImGui::PopStyleVar();
     }
 
-    void handle_event(Event& event, float dt) override
-    {
-      Event::try_handler<MouseMovedEvent>(event, BIND_EVENT_FOR_FUN(MyLayer::mouse_moved_event_handler, dt));
-    }
-
    private:
-    bool mouse_moved_event_handler(MouseMovedEvent& event, float dt)
+    void handle_keyboard_input(float dt)
     {
-      if (Input::is_mouse_button_pressed(GLFW_MOUSE_BUTTON_LEFT))
-      {
-        m_camera->rotate(event.get_dx(), event.get_dy(), m_sensitivity * dt);
-      }
-      if (Input::is_mouse_button_pressed(GLFW_MOUSE_BUTTON_RIGHT))
-      {
-        m_camera->zoom(event.get_dy(), m_sensitivity * dt);
-      }
+      float zoom         = 0;
+      glm::vec2 rotation = { 0, 0 };
+      if (Input::is_key_pressed(GLFW_KEY_W)) { rotation.y -= m_keyboard_sens; }
+      if (Input::is_key_pressed(GLFW_KEY_S)) { rotation.y += m_keyboard_sens; }
+      if (Input::is_key_pressed(GLFW_KEY_A)) { rotation.x -= m_keyboard_sens; }
+      if (Input::is_key_pressed(GLFW_KEY_D)) { rotation.x += m_keyboard_sens; }
+      if (Input::is_key_pressed(GLFW_KEY_Q)) { zoom += m_keyboard_sens; }
+      if (Input::is_key_pressed(GLFW_KEY_E)) { zoom -= m_keyboard_sens; }
 
-      return false;
+      m_camera->zoom(zoom, dt);
+      m_camera->rotate(rotation.x, rotation.y, dt);
     }
 
    private:
@@ -204,8 +207,10 @@ namespace sym
       std::shared_ptr<Shader> m_shader;
       std::shared_ptr<Texture2D> m_texture;
       std::shared_ptr<Framebuffer> m_buffer;
-      const uint32_t m_width  = 800;
-      const uint32_t m_height = 600;
+      const uint32_t m_tex_width  = 800;
+      const uint32_t m_tex_height = 600;
+      float m_win_width           = 800;
+      float m_win_height          = 600;
     } m_framebuffer;
 
     struct
@@ -225,7 +230,7 @@ namespace sym
     } m_cube;
 
     std::shared_ptr<OrbitCamera> m_camera;
-    float m_sensitivity = 1.f;
+    float m_keyboard_sens = 5.f;
   };
 } // namespace sym
 
