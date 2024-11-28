@@ -2,7 +2,8 @@
 #define SYM_BASE_MYLAYER_HH
 
 #include "SymBase.hh"
-#include "pch.hh"
+
+#include "DockSpaceLayer.hh"
 
 using namespace sym_base;
 
@@ -148,15 +149,16 @@ namespace sym
 
     virtual void imgui_update(float dt)
     {
-      ImGui::Begin("Settings");
+      ImGui::Begin(DockWinId::s_settings.c_str());
       ImGui::ColorEdit3("Cube color", glm::value_ptr(m_cube.m_color));
       ImGui::End();
 
-      auto window_size = ImVec2(m_framebuffer.m_width, m_framebuffer.m_height);
-      ImGui::SetNextWindowSize(window_size);
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-      ImGui::Begin("Simulation window", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
-      ImGui::Image((ImTextureID)(intptr_t)m_framebuffer.m_texture->get_id(), window_size, ImVec2(0, 1), ImVec2(1, 0));
+      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+      ImGui::Begin(DockWinId::s_content.c_str(), nullptr, ImGuiWindowFlags_NoScrollbar);
+      ImGui::Image((ImTextureID)(intptr_t)m_framebuffer.m_texture->get_id(),
+                   ImGui::GetWindowSize(),
+                   ImVec2(0, 1),
+                   ImVec2(1, 0));
       ImGui::End();
       ImGui::PopStyleVar();
     }

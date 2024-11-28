@@ -3,7 +3,7 @@
 
 #include "SymBase.hh"
 
-#include "GuiLayer.hh"
+#include "DockSpaceLayer.hh"
 #include "MyLayer.hh"
 
 using namespace sym_base;
@@ -15,8 +15,8 @@ namespace sym
    public:
     SandboxApp(const ApplicationParams& params) : Application(params)
     {
-      push_layer(new GuiLayer());
       push_layer(new MyLayer());
+      push_layer(new DockSpaceLayer());
     }
 
     ~SandboxApp() override {}
