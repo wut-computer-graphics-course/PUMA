@@ -1,8 +1,7 @@
-#ifndef SYM_BASE_GUILAYER_HH
-#define SYM_BASE_GUILAYER_HH
+#ifndef SYM_BASE_DOCKSPACELAYER_HH
+#define SYM_BASE_DOCKSPACELAYER_HH
 
 #include "SymBase.hh"
-#include "pch.hh"
 
 namespace sym
 {
@@ -76,4 +75,4 @@ namespace sym
   };
 } // namespace sym
 
-#endif // SYM_BASE_GUILAYER_HH
+#endif // SYM_BASE_DOCKSPACELAYER_HH

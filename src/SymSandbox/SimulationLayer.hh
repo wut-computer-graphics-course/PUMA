@@ -9,10 +9,10 @@ using namespace sym_base;
 
 namespace sym
 {
-  class MyLayer : public Layer
+  class SimulationLayer : public Layer
   {
    public:
-    MyLayer()
+    SimulationLayer()
     {
       BufferLayout layout = { { SharedDataType::Float3, "a_Position" },
                               { SharedDataType::Float3, "a_Color" },
@@ -90,7 +90,7 @@ namespace sym
         m_framebuffer.m_buffer->create_render_buffer();
       }
     }
-    ~MyLayer() = default;
+    ~SimulationLayer() = default;
 
     void update(float dt) override
     {
