@@ -4,9 +4,10 @@
 #include "SymBase.hh"
 
 #include "DockSpaceLayer.hh"
+#include "FramebufferLayer.hh"
+#include "GuiLayer.hh"
 #include "InputLayer.hh"
 #include "SimulationContext.hh"
-#include "SimulationLayer.hh"
 
 using namespace sym_base;
 
@@ -22,8 +23,9 @@ namespace sym
       SimulationContext::s_camera->set_position({ 0, 0, 5 });
 
       // create application layers
-      push_layer(new SimulationLayer());
       push_layer(new InputLayer());
+      push_layer(new GuiLayer());
+      push_layer(new FramebufferLayer());
       push_layer(new DockSpaceLayer());
     }
 
