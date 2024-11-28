@@ -10,6 +10,10 @@ namespace sym_base
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
+    // ImGui context configuration
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    //    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    //    io.ConfigViewportsNoTaskBarIcon = true;
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -48,12 +52,20 @@ namespace sym_base
 
   void ImGuiLayer::end()
   {
-    //    ImGuiIO& io      = ImGui::GetIO();
-    //    Application& app = Application::get();
-    //    io.DisplaySize   = ImVec2((float)app.get_window().get_width(), (float)app.get_window().get_height());
+    ImGuiIO& io      = ImGui::GetIO();
+    Application& app = Application::get();
+    io.DisplaySize   = ImVec2((float)app.get_window().get_width(), (float)app.get_window().get_height());
 
     // Rendering
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    //    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    //    {
+    //      GLFWwindow* backup_current_context = glfwGetCurrentContext();
+    //      ImGui::UpdatePlatformWindows();
+    //      ImGui::RenderPlatformWindowsDefault();
+    //      glfwMakeContextCurrent(backup_current_context);
+    //    }
   }
 } // namespace sym_base
