@@ -38,6 +38,7 @@ namespace sym_base
 
     inline static Application& get() { return *s_instance; }
     inline Window& get_window() { return *s_instance->m_window; }
+    inline const ApplicationParams& get_params() const { return m_params; }
 
     virtual void end_simulation();
     virtual void reset_simulation();
@@ -66,6 +67,8 @@ namespace sym_base
    private:
     static Application* s_instance;
     static EventCallbackFn s_events_manager;
+
+    ApplicationParams m_params;
 
     LayerStack* m_layer_stack;
     ImGuiLayer* m_imgui_layer;

@@ -11,7 +11,7 @@ namespace sym_base
   Application* Application::s_instance          = nullptr;
   EventCallbackFn Application::s_events_manager = nullptr;
 
-  Application::Application(const ApplicationParams& params) : m_running{ true }
+  Application::Application(const ApplicationParams& params) : m_running{ true }, m_params{ params }
   {
     s_instance = this;
 
