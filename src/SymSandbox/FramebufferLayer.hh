@@ -42,9 +42,11 @@ namespace sym
 
         m_framebuffer.m_texture = std::make_shared<Texture2D>(m_framebuffer.m_width, m_framebuffer.m_height);
 
-        m_framebuffer.m_buffer = std::make_shared<Framebuffer>();
+        FramebufferParams params{ .m_multisampling = true };
+        m_framebuffer.m_buffer = std::make_shared<Framebuffer>(params);
         m_framebuffer.m_buffer->set_color_buffer(m_framebuffer.m_texture);
         m_framebuffer.m_buffer->create_render_buffer();
+        m_framebuffer.m_buffer->create_multisampled_buffer();
       }
 
       push_child_layer(new SimulationLayer());
@@ -77,6 +79,8 @@ namespace sym
           Layer::update(dt);
         }
         m_framebuffer.m_buffer->unbind();
+
+        m_framebuffer.m_buffer->blit();
       }
       Renderer::end_scene();
     }
