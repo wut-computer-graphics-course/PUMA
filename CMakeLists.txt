@@ -7,7 +7,6 @@ file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/src/SymSandbox/*.cc)
 
 add_executable(${PROJECT_NAME} ${SOURCES} src/main.cc)
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/external)
 add_subdirectory(src/SymBase)
 
 target_link_libraries(${PROJECT_NAME} SymBase)
