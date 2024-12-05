@@ -38,6 +38,7 @@ namespace sym_base
     case SharedDataType::Int4:
       return 4;
     case SharedDataType::Bool:
+    default:
       return 1;
     }
   }
@@ -63,6 +64,7 @@ namespace sym_base
     case SharedDataType::Int4:
       return GL_INT;
     case SharedDataType::Bool:
+    default:
       return GL_BOOL;
     }
   }
@@ -155,6 +157,7 @@ static uint32_t shared_data_type_size(sym_base::SharedDataType type)
   case sym_base::SharedDataType::Int4:
     return 4 * 4;
   case sym_base::SharedDataType::Bool:
+  default:
     return 1;
   }
 }
