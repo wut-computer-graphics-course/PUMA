@@ -2,7 +2,7 @@
 
 int main()
 {
-  sym::SandboxApp app({ .m_title        = "Sym base",
+  sym::SandboxApp app({ .m_title        = "PUMA",
                         .m_width        = 1280,
                         .m_height       = 720,
                         .m_samples      = 4,
