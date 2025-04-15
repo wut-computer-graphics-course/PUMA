@@ -4,7 +4,6 @@
 #include "SymBase.hh"
 
 #include "DockSpaceLayer.hh"
-#include "SimulationContext.hh"
 #include "SimulationLayer.hh"
 
 using namespace sym_base;
@@ -18,36 +17,16 @@ namespace sym
     {
       // framebuffer
       {
-        float vertices[] = {
-          // Coords   // TexCoords
-          -1.f, -1.f, 0.f, 0.f, //
-          1.f,  -1.f, 1.f, 0.f, //
-          1.f,  1.f,  1.f, 1.f, //
-          -1.f, 1.f,  0.f, 1.f  //
-        };
-
-        auto vertex_buffer = std::make_shared<VertexBuffer>(vertices, sizeof(vertices), sizeof(float));
-
-        BufferLayout layout = { { SharedDataType::Float2, "a_Position" }, { SharedDataType::Float2, "a_TexCoord" } };
-        vertex_buffer->set_layout(layout);
-
-        uint32_t indices[6] = { 0, 1, 2, 2, 3, 0 };
-        auto index_buffer   = std::make_shared<IndexBuffer>(indices, sizeof(indices) / sizeof(uint32_t));
-
-        m_framebuffer.m_va = std::make_shared<VertexArray>();
-        m_framebuffer.m_va->add_vertex_buffer(vertex_buffer);
-        m_framebuffer.m_va->set_index_buffer(index_buffer);
-
-        m_framebuffer.m_shader = std::make_shared<Shader>("shaders/framebuffer.glsl");
-
         m_framebuffer.m_texture = std::make_shared<Texture2D>(m_framebuffer.m_width, m_framebuffer.m_height);
-
         FramebufferParams params{ .m_multisampling = true };
         m_framebuffer.m_buffer = std::make_shared<Framebuffer>(params);
         m_framebuffer.m_buffer->set_color_buffer(m_framebuffer.m_texture);
         m_framebuffer.m_buffer->create_render_buffer();
         m_framebuffer.m_buffer->create_multisampled_buffer();
       }
+
+      m_camera = std::make_shared<OrbitCamera>();
+      m_camera->set_position({ 0, 0, 5 });
 
       push_child_layer(new SimulationLayer());
     }
@@ -57,19 +36,18 @@ namespace sym
     {
       auto& window           = Application::get().get_window();
       auto rendering_context = window.get_rendering_context();
+      rendering_context->set_viewport(0, 0, m_framebuffer.m_width, m_framebuffer.m_height);
 
-      auto& camera = SimulationContext::s_camera;
-      camera->set_perspective(M_PI / 4, m_framebuffer.m_win_width / m_framebuffer.m_win_height, 1.f, 100.f);
+      auto aspect_ratio = m_framebuffer.m_win_width / m_framebuffer.m_win_height;
+      m_camera->set_perspective(aspect_ratio);
 
-      Renderer::begin_scene();
+      Renderer::begin_scene(nullptr, m_camera.get());
       {
-        rendering_context->set_viewport(0, 0, m_framebuffer.m_width, m_framebuffer.m_height);
-
         m_framebuffer.m_buffer->bind();
         {
           // clear buffer
           RenderCommand::set_clear_color({ .1f, .1f, .1f, 1.f });
-          RenderCommand::clear();
+          RenderCommand::clear(ClearBufferMask::DEPTH_BUFFER_BIT | ClearBufferMask::COLOR_BUFFER_BIT);
           // enable rendering features
           RenderCommand::depth_buffering(true);
           RenderCommand::anti_aliasing(true);
@@ -97,6 +75,9 @@ namespace sym
         m_framebuffer.m_win_height = win_size.y;
 
         ImGui::Image((ImTextureID)(intptr_t)m_framebuffer.m_texture->get_id(), win_size, ImVec2(0, 1), ImVec2(1, 0));
+
+        auto viewport_hovered = ImGui::IsWindowHovered();
+        Application::get().get_imgui_layer().block_events(!viewport_hovered);
       }
       ImGui::End();
       ImGui::PopStyleVar();
@@ -104,8 +85,6 @@ namespace sym
 
     struct
     {
-      std::shared_ptr<VertexArray> m_va;
-      std::shared_ptr<Shader> m_shader;
       std::shared_ptr<Texture2D> m_texture;
       std::shared_ptr<Framebuffer> m_buffer;
       const uint32_t m_width  = 800;
@@ -113,6 +92,8 @@ namespace sym
       float m_win_width       = 800;
       float m_win_height      = 600;
     } m_framebuffer;
+
+    std::shared_ptr<OrbitCamera> m_camera;
   };
 } // namespace sym
 

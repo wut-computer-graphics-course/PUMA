@@ -7,7 +7,6 @@
 #include "FramebufferLayer.hh"
 #include "GuiLayer.hh"
 #include "InputLayer.hh"
-#include "SimulationContext.hh"
 
 using namespace sym_base;
 
@@ -18,10 +17,6 @@ namespace sym
    public:
     SandboxApp(const ApplicationParams& params) : Application(params)
     {
-      // setup simulation
-      SimulationContext::s_camera = std::make_shared<OrbitCamera>();
-      SimulationContext::s_camera->set_position({ 0, 0, 5 });
-
       // create application layers
       push_layer(new InputLayer());
       push_layer(new GuiLayer());

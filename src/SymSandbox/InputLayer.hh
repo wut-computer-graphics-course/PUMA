@@ -1,9 +1,8 @@
 #ifndef SIMULATIONAPP_INPUTLAYER_HH
 #define SIMULATIONAPP_INPUTLAYER_HH
 
-#include "SimulationContext.hh"
 #include "SymBase.hh"
-#include "pch.hh"
+#include "symbase_pch.hh"
 
 using namespace sym_base;
 
@@ -28,8 +27,9 @@ namespace sym
       if (Input::is_key_pressed(GLFW_KEY_Q)) { zoom += m_keyboard_sens; }
       if (Input::is_key_pressed(GLFW_KEY_E)) { zoom -= m_keyboard_sens; }
 
-      SimulationContext::s_camera->zoom(zoom, dt);
-      SimulationContext::s_camera->rotate(rotation.x, rotation.y, dt);
+      auto camera = dynamic_cast<OrbitCamera*>(Renderer::get_camera());
+      camera->zoom(zoom, dt);
+      camera->rotate(rotation.x, rotation.y, dt);
     }
 
    private:

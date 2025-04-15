@@ -2,7 +2,7 @@
 #define SYM_BASE_MYLAYER_HH
 
 #include "SymBase.hh"
-#include "pch.hh"
+#include "symbase_pch.hh"
 
 #include "DockSpaceLayer.hh"
 
@@ -64,7 +64,7 @@ namespace sym
 
     void update(float dt) override
     {
-      auto& camera = SimulationContext::s_camera;
+      auto camera = Renderer::get_camera();
 
       // cube
       {
@@ -75,7 +75,7 @@ namespace sym
         m_cube.m_shader->upload_uniform_mat4("u_MVP", mvp);
         RenderCommand::set_draw_primitive(DrawPrimitive::LINES);
         RenderCommand::set_line_width(2);
-        Renderer::submit(m_cube.m_va);
+        Renderer::submit(*m_cube.m_shader, *m_cube.m_va, m_cube.get_model_mat());
         m_cube.m_va->unbind();
       }
       // square
@@ -87,7 +87,7 @@ namespace sym
         m_square.m_shader->upload_uniform_int("u_Texture", 0);
         RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
         RenderCommand::set_line_width(1);
-        Renderer::submit(m_square.m_va);
+        Renderer::submit(*m_square.m_shader, *m_square.m_va, glm::mat4(1));
         m_square.m_va->unbind();
       }
     }
