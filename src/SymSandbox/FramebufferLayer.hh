@@ -41,11 +41,16 @@ namespace sym
       auto aspect_ratio = m_framebuffer.m_win_width / m_framebuffer.m_win_height;
       m_camera->set_perspective(aspect_ratio);
 
+
+      // clear viewport
+      RenderCommand::set_clear_color({ .1f, .1f, .1f, 1.f });
+      RenderCommand::clear(ClearBufferMask::COLOR_BUFFER_BIT);
+
       Renderer::begin_scene(nullptr, m_camera.get());
       {
         m_framebuffer.m_buffer->bind();
         {
-          // clear buffer
+          // clear framebuffer
           RenderCommand::set_clear_color({ .1f, .1f, .1f, 1.f });
           RenderCommand::clear(ClearBufferMask::DEPTH_BUFFER_BIT | ClearBufferMask::COLOR_BUFFER_BIT);
           // enable rendering features
