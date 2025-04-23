@@ -27,7 +27,7 @@ namespace sym
       m_joint4Angle(0.0f),
       m_joint5Angle(0.0f)
     { }
-    
+
     ~SimulationLayer() = default;
 
     void update(float dt) override
@@ -91,7 +91,7 @@ namespace sym
       ImGui::SliderFloat("Joint 3 Angle", &m_joint3Angle, -glm::pi<float>(), glm::pi<float>());
       ImGui::SliderFloat("Joint 4 Angle", &m_joint4Angle, -glm::pi<float>(), glm::pi<float>());
       ImGui::SliderFloat("Joint 5 Angle", &m_joint5Angle, -glm::pi<float>(), glm::pi<float>());
-      
+
       ImGui::End();
     }
 
@@ -103,7 +103,7 @@ namespace sym
     Model m_pumaModel5;
     Model m_pumaModel6;
     Shader m_robotShader;
-    
+
     float m_joint1Angle;
     float m_joint2Angle;
     float m_joint3Angle;
