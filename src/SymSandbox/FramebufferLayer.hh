@@ -4,6 +4,7 @@
 #include "SymBase.hh"
 
 #include "DockSpaceLayer.hh"
+#include "ShadowVolumeExampleLayer.hh"
 #include "SimulationLayer.hh"
 
 using namespace sym_base;
@@ -26,9 +27,10 @@ namespace sym
       }
 
       m_camera = std::make_shared<OrbitCamera>();
-      m_camera->set_position({ 0, 0, 5 });
+      m_camera->set_position({ 0, 5, 5 });
 
-      push_child_layer(new SimulationLayer());
+      // push_child_layer(new SimulationLayer());
+      push_child_layer(new ShadowVolumeExampleLayer());
     }
     ~FramebufferLayer() = default;
 
@@ -40,7 +42,6 @@ namespace sym
 
       auto aspect_ratio = m_framebuffer.m_win_width / m_framebuffer.m_win_height;
       m_camera->set_perspective(aspect_ratio);
-
 
       // clear viewport
       RenderCommand::set_clear_color({ .1f, .1f, .1f, 1.f });
