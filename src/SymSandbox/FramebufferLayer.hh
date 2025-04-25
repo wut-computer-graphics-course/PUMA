@@ -56,7 +56,6 @@ namespace sym
           RenderCommand::clear(ClearBufferMask::DEPTH_BUFFER_BIT | ClearBufferMask::COLOR_BUFFER_BIT |
                                ClearBufferMask::STENCIL_BUFFER_BIT);
           // enable rendering features
-          RenderCommand::depth_buffering(true);
           RenderCommand::anti_aliasing(true);
           RenderCommand::face_culling(true);
           RenderCommand::alpha_blending(true);
