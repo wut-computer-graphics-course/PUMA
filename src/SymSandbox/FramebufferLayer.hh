@@ -29,8 +29,8 @@ namespace sym
       m_camera = std::make_shared<OrbitCamera>();
       m_camera->set_position({ 0, 5, 5 });
 
-      // push_child_layer(new SimulationLayer());
-      push_child_layer(new ShadowVolumeExampleLayer());
+      push_child_layer(new SimulationLayer());
+      //      push_child_layer(new ShadowVolumeExampleLayer());
     }
     ~FramebufferLayer() = default;
 
