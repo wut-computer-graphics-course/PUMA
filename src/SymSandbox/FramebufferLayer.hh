@@ -53,7 +53,8 @@ namespace sym
         {
           // clear framebuffer
           RenderCommand::set_clear_color({ .1f, .1f, .1f, 1.f });
-          RenderCommand::clear(ClearBufferMask::DEPTH_BUFFER_BIT | ClearBufferMask::COLOR_BUFFER_BIT);
+          RenderCommand::clear(ClearBufferMask::DEPTH_BUFFER_BIT | ClearBufferMask::COLOR_BUFFER_BIT |
+                               ClearBufferMask::STENCIL_BUFFER_BIT);
           // enable rendering features
           RenderCommand::depth_buffering(true);
           RenderCommand::anti_aliasing(true);
