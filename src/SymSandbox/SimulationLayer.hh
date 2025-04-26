@@ -2,8 +2,10 @@
 #define SYM_BASE_MYLAYER_HH
 
 #include "SymBase.hh"
+
+#include "Events/GuiSimulationPausedEvent.hh"
+#include "Events/GuiSimulationResumedEvent.hh"
 #include "Utils.hh"
-#include "symbase_pch.hh"
 
 #define SHADOW_VOLUMES // Comment to skip rendering shadow volumes
 
@@ -73,8 +75,11 @@ namespace sym
       // ------------
       // Update scene
       // ------------
-      update_camera(dt);
-      update_robot(dt);
+      if (m_update)
+      {
+        update_camera(dt);
+        update_robot(dt);
+      }
       // ------------
 
 #ifdef SHADOW_VOLUMES
@@ -123,6 +128,45 @@ namespace sym
       // ------------------------------------------------------------------------------------
     }
 
+    void imgui_update(float dt) override
+    {
+      ImGui::Begin(DockWinId::s_settings.c_str());
+      {
+        static const float padding = 5, rounding = 5, thickness = 1.5f;
+        auto draw_list  = ImGui::GetWindowDrawList();
+        auto item_min   = ImGui::GetCursorScreenPos();
+        auto avail_size = ImGui::GetContentRegionAvail();
+        ImGui::BeginChild("Robot data", ImVec2(avail_size.x, 0), ImGuiChildFlags_AutoResizeY);
+        {
+          ImGui::ColorEdit3("Color", glm::value_ptr(m_robot.m_color));
+          for (size_t i = 0; i < m_robot.m_joints.size(); i++)
+          {
+            auto label = std::format("Joint {} angle", i + 1);
+            ImGui::SliderFloat(label.c_str(), &m_robot.m_joints[i].m_angle, -glm::pi<float>(), glm::pi<float>());
+          }
+        }
+        ImGui::EndChild();
+        auto item_max = ImGui::GetItemRectMax();
+        item_min.x -= padding;
+        item_min.y -= padding;
+        item_max.x += padding;
+        item_max.y += padding;
+        draw_list->AddRect(item_min, item_max, ImGui::GetColorU32(ImGuiCol_Border), rounding, 0, thickness);
+        ImGui::Dummy(ImVec2(0, 5));
+      }
+      ImGui::End();
+    }
+
+    void handle_event(Event& event, float dt) override
+    {
+      EventDispatcher dispatcher(event);
+      dispatcher.dispatch_with_name_check<GuiSimulationPausedEvent>(
+          [this](auto& e) { return this->gui_simulation_paused_event_handler(e); });
+      dispatcher.dispatch_with_name_check<GuiSimulationResumedEvent>(
+          [this](auto& e) { return this->gui_simulation_resumed_event_handler(e); });
+    }
+
+   private:
     void update_robot(float dt)
     {
       static std::array<glm::vec3, 6> translations = { glm::vec3(0, 2, 0),
@@ -252,33 +296,16 @@ namespace sym
       }
     }
 
-    virtual void imgui_update(float dt)
+    bool gui_simulation_paused_event_handler(GuiSimulationPausedEvent& e)
     {
-      ImGui::Begin(DockWinId::s_settings.c_str());
-      {
-        static const float padding = 5, rounding = 5, thickness = 1.5f;
-        auto draw_list  = ImGui::GetWindowDrawList();
-        auto item_min   = ImGui::GetCursorScreenPos();
-        auto avail_size = ImGui::GetContentRegionAvail();
-        ImGui::BeginChild("Robot data", ImVec2(avail_size.x, 0), ImGuiChildFlags_AutoResizeY);
-        {
-          ImGui::ColorEdit3("Color", glm::value_ptr(m_robot.m_color));
-          for (size_t i = 0; i < m_robot.m_joints.size(); i++)
-          {
-            auto label = std::format("Joint {} angle", i + 1);
-            ImGui::SliderFloat(label.c_str(), &m_robot.m_joints[i].m_angle, -glm::pi<float>(), glm::pi<float>());
-          }
-        }
-        ImGui::EndChild();
-        auto item_max = ImGui::GetItemRectMax();
-        item_min.x -= padding;
-        item_min.y -= padding;
-        item_max.x += padding;
-        item_max.y += padding;
-        draw_list->AddRect(item_min, item_max, ImGui::GetColorU32(ImGuiCol_Border), rounding, 0, thickness);
-        ImGui::Dummy(ImVec2(0, 5));
-      }
-      ImGui::End();
+      m_update = false;
+      return true;
+    }
+
+    bool gui_simulation_resumed_event_handler(GuiSimulationResumedEvent& e)
+    {
+      m_update = true;
+      return true;
     }
 
    private:
@@ -288,6 +315,8 @@ namespace sym
       float m_angle = 0;
       glm::mat4 m_model_mat;
     };
+
+    bool m_update = true;
 
     Shader* m_ambient_shader;
     Shader* m_light_shader;
