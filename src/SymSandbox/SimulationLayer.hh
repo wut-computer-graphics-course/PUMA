@@ -5,6 +5,8 @@
 #include "Utils.hh"
 #include "symbase_pch.hh"
 
+#define SHADOW_VOLUMES // Comment to skip rendering shadow volumes
+
 using namespace sym_base;
 
 static void inverse_kinematics(glm::vec3 pos, glm::vec3 normal, float& a1, float& a2, float& a3, float& a4, float& a5);
@@ -53,8 +55,9 @@ namespace sym
       // robot
       {
         ModelParams params{ .m_position = true, .m_normal = true };
-        // TODO: uncomment for shadow volumes
-        // params.m_use_adjacency = true;
+#ifdef SHADOW_VOLUMES
+        params.m_use_adjacency = true;
+#endif
         for (size_t i = 0; i < m_robot.m_joints.size(); i++)
         {
           m_robot.m_joints[i].m_model = std::make_shared<Model>(std::format("meshes/mesh{}.puma", i + 1), params);
@@ -74,6 +77,7 @@ namespace sym
       update_robot(dt);
       // ------------
 
+#ifdef SHADOW_VOLUMES
       // -------------------------------------------------
       // Ambient pass to make sure z-buffer contains data
       // -------------------------------------------------
@@ -103,12 +107,19 @@ namespace sym
       RenderCommand::set_depth_func(CompFunc::EQUAL);
       RenderCommand::set_stencil_func(CompFunc::EQUAL, 0x0, 0xFF);
       RenderCommand::set_stencil_op(StencilAct::KEEP, StencilAct::KEEP, StencilAct::KEEP);
+#else
+      RenderCommand::depth_test(true);
+#endif
+
       draw_walls(m_phong_shader);
       draw_robot(m_phong_shader);
       draw_lights();
+
+#ifdef SHADOW_VOLUMES
       RenderCommand::depth_mask(true);
       RenderCommand::set_depth_func(CompFunc::LEQUAL);
       RenderCommand::stencil_test(false);
+#endif
       // ------------------------------------------------------------------------------------
     }
 
@@ -192,9 +203,11 @@ namespace sym
 
       shader->bind();
       {
-        // TODO: uncomment for shadow volumes
-        // RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES_ADJACENCY);
+#ifdef SHADOW_VOLUMES
+        RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES_ADJACENCY);
+#else
         RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
+#endif
         RenderCommand::set_line_width(1);
         shader->upload_uniform_mat4("u_ViewProjection", vp);
         shader->upload_uniform_float3("u_CameraPos", camera->get_position());
