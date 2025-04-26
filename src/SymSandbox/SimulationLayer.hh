@@ -2,11 +2,12 @@
 #define SYM_BASE_MYLAYER_HH
 
 #include "SymBase.hh"
+#include "Utils.hh"
 #include "symbase_pch.hh"
 
 using namespace sym_base;
 
-static std::pair<std::vector<Vertex>, std::vector<uint32_t>> generate_cuboid(glm::vec3 dims, glm::vec3 color);
+static std::pair<std::vector<Vertex>, std::vector<uint32_t>> generate_cuboid(glm::vec3 dims);
 
 namespace sym
 {
@@ -17,27 +18,48 @@ namespace sym
     {
       // shaders
       {
-        m_robot_shader = ShaderSystem::acquire("shaders/robot.glsl");
-        m_light_shader = ShaderSystem::acquire("shaders/light.glsl");
+        m_ambient_shader       = ShaderSystem::acquire("shaders/ambient.glsl");
+        m_light_shader         = ShaderSystem::acquire("shaders/light.glsl");
+        m_phong_shader         = ShaderSystem::acquire("shaders/phong.glsl");
+        m_shadow_volume_shader = ShaderSystem::acquire("shaders/shadow_volume.glsl");
+      }
+
+      // walls
+      {
+        auto&& [vertices, indices] = generate_cuboid({ m_walls.m_size, m_walls.m_size, m_walls.m_size });
+        for (auto& v : vertices)
+        {
+          v.m_normal *= -1;
+        }
+
+        m_walls.m_model =
+            std::make_shared<Model>(vertices, indices, ModelParams{ .m_position = true, .m_normal = true });
+        m_walls.m_model_mat = glm::translate(glm::mat4(1), glm::vec3(0, m_walls.m_size / 2, 0));
+        m_walls.m_color     = glm::vec3(1, 1, 1);
       }
 
       // light
       {
         const glm::vec3 size       = { .2f, .2f, .2f };
-        auto&& [vertices, indices] = generate_cuboid(size, { 1, 1, 1 });
+        auto&& [vertices, indices] = generate_cuboid(size);
 
         m_light.m_model     = std::make_shared<Model>(vertices, indices, ModelParams{ .m_position = true });
-        m_light.m_model_mat = glm::translate(glm::mat4(1), glm::vec3(5.f / 2 - size.x, 5.f - size.y, 5.f / 2 - size.z));
-        m_light.m_color     = glm::vec3(1, 1, 1);
+        m_light.m_model_mat = glm::translate(
+            glm::mat4(1),
+            glm::vec3(m_walls.m_size / 2 - size.x, m_walls.m_size - size.y, m_walls.m_size / 2 - size.z));
+        m_light.m_color = glm::vec3(1, 1, 1);
       }
 
       // robot
       {
+        ModelParams params{ .m_position = true, .m_normal = true };
+        // TODO: uncomment for shadow volumes
+        // params.m_use_adjacency = true;
         for (size_t i = 0; i < m_robot.m_joints.size(); i++)
         {
-          m_robot.m_joints[i].m_model = std::make_shared<Model>(std::format("meshes/mesh{}.puma", i + 1),
-                                                                ModelParams{ .m_position = true, .m_normal = true });
+          m_robot.m_joints[i].m_model = std::make_shared<Model>(std::format("meshes/mesh{}.puma", i + 1), params);
         }
+        m_robot.m_color = glm::vec3(1, 1, 1);
       }
     }
 
@@ -45,13 +67,49 @@ namespace sym
 
     void update(float dt) override
     {
-      RenderCommand::depth_test(true);
-
+      // ------------
+      // Update scene
+      // ------------
       update_camera(dt);
       update_robot(dt);
+      // ------------
 
-      draw_robot(m_robot_shader);
+      // -------------------------------------------------
+      // Ambient pass to make sure z-buffer contains data
+      // -------------------------------------------------
+      draw_walls(m_ambient_shader);
+      draw_robot(m_ambient_shader);
       draw_lights();
+      // -------------------------------------------------
+
+      // Create shadow volumes of objects and render into the stencil buffer
+      // -------------------------------------------------------------------
+      RenderCommand::set_color_mask(false, false, false, false);
+      RenderCommand::stencil_test(true);
+      RenderCommand::depth_test(true);
+      RenderCommand::set_stencil_func(CompFunc::ALWAYS, 0, 0xFF);
+      RenderCommand::depth_clamp(true);
+      RenderCommand::depth_mask(false);
+      RenderCommand::set_stencil_op_per_face(Face::BACK, StencilAct::KEEP, StencilAct::INCR_WRAP, StencilAct::KEEP);
+      RenderCommand::set_stencil_op_per_face(Face::FRONT, StencilAct::KEEP, StencilAct::DECR_WRAP, StencilAct::KEEP);
+      draw_robot(m_shadow_volume_shader);
+      RenderCommand::depth_clamp(false);
+      // -------------------------------------------------------------------
+
+      // ------------------------------------------------------------------------------------
+      // Render the scene again, using lightning and the stencil buffer as a mask for shadows
+      // ------------------------------------------------------------------------------------
+      RenderCommand::set_color_mask(true, true, true, true);
+      RenderCommand::set_depth_func(CompFunc::EQUAL);
+      RenderCommand::set_stencil_func(CompFunc::EQUAL, 0x0, 0xFF);
+      RenderCommand::set_stencil_op(StencilAct::KEEP, StencilAct::KEEP, StencilAct::KEEP);
+      draw_walls(m_phong_shader);
+      draw_robot(m_phong_shader);
+      draw_lights();
+      RenderCommand::depth_mask(true);
+      RenderCommand::set_depth_func(CompFunc::LEQUAL);
+      RenderCommand::stencil_test(false);
+      // ------------------------------------------------------------------------------------
     }
 
     void update_robot(float dt)
@@ -80,6 +138,29 @@ namespace sym
       }
     }
 
+    void draw_walls(Shader* shader)
+    {
+      auto camera = Renderer::get_camera();
+      auto vp     = camera->get_projection() * camera->get_view();
+
+      shader->bind();
+      {
+        RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
+        RenderCommand::set_line_width(1);
+        RenderCommand::face_culling(Face::FRONT);
+        shader->upload_uniform_mat4("u_ViewProjection", vp);
+        shader->upload_uniform_float3("u_CameraPos", camera->get_position());
+        shader->upload_uniform_float3("u_Light.position", m_light.m_model_mat[3]);
+        shader->upload_uniform_float3("u_Light.color", m_light.m_color);
+        shader->upload_uniform_float3("u_Color", m_walls.m_color);
+        // walls
+        shader->upload_uniform_mat4("u_Model", m_walls.m_model_mat);
+        Renderer::submit(*m_walls.m_model);
+        RenderCommand::face_culling(false);
+      }
+      shader->unbind();
+    }
+
     void draw_robot(Shader* shader)
     {
       auto camera = Renderer::get_camera();
@@ -87,6 +168,8 @@ namespace sym
 
       shader->bind();
       {
+        // TODO: uncomment for shadow volumes
+        // RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES_ADJACENCY);
         RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
         RenderCommand::set_line_width(1);
         shader->upload_uniform_mat4("u_ViewProjection", vp);
@@ -169,8 +252,18 @@ namespace sym
       glm::mat4 m_model_mat;
     };
 
-    Shader* m_robot_shader;
+    Shader* m_ambient_shader;
     Shader* m_light_shader;
+    Shader* m_phong_shader;
+    Shader* m_shadow_volume_shader;
+
+    struct
+    {
+      std::shared_ptr<Model> m_model;
+      glm::mat4 m_model_mat;
+      const float m_size = 10;
+      glm::vec3 m_color;
+    } m_walls;
 
     struct
     {
@@ -182,7 +275,7 @@ namespace sym
     struct
     {
       std::array<PumaJoint, 6> m_joints;
-      glm::vec3 m_color = { 1, 1, 1 };
+      glm::vec3 m_color;
     } m_robot;
   };
 } // namespace sym
