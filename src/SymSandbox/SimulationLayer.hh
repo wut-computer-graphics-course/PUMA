@@ -7,7 +7,7 @@
 
 using namespace sym_base;
 
-static std::pair<std::vector<Vertex>, std::vector<uint32_t>> generate_cuboid(glm::vec3 dims);
+static void inverse_kinematics(glm::vec3 pos, glm::vec3 normal, float& a1, float& a2, float& a3, float& a4, float& a5);
 
 namespace sym
 {
@@ -136,6 +136,30 @@ namespace sym
         joint.m_model_mat = glm::translate(joint.m_model_mat, -translations[i]);
         joint.m_model_mat = m_robot.m_joints[i - 1].m_model_mat * joint.m_model_mat;
       }
+
+      // -------------------------------------------------------------------------------------------
+      // ---------------------------------------- ANIMATION ----------------------------------------
+      // -------------------------------------------------------------------------------------------
+
+      float& a1 = m_robot.m_joints[1].m_angle;
+      float& a2 = m_robot.m_joints[2].m_angle;
+      float& a3 = m_robot.m_joints[3].m_angle;
+      float& a4 = m_robot.m_joints[4].m_angle;
+      float& a5 = m_robot.m_joints[5].m_angle;
+
+      static const float r = .025f;
+      static float a       = 0;
+      a += dt;
+
+      static glm::vec3 pos = glm::vec3(-2.05f, 0.27f, 0.0f);
+      pos.y += std::cos(a) * r;
+      pos.z += std::sin(a) * r;
+
+      inverse_kinematics(pos, glm::normalize(glm::vec3(-1, 0, 0)), a1, a2, a3, a4, a5);
+
+      // -------------------------------------------------------------------------------------------
+      // -------------------------------------------------------------------------------------------
+      // -------------------------------------------------------------------------------------------
     }
 
     void draw_walls(Shader* shader)
@@ -279,5 +303,25 @@ namespace sym
     } m_robot;
   };
 } // namespace sym
+
+static void inverse_kinematics(glm::vec3 pos, glm::vec3 normal, float& a1, float& a2, float& a3, float& a4, float& a5)
+{
+  float l1 = .91f, l2 = .81f, l3 = .33f, dy = .27f, dz = .26f;
+  normal         = glm::normalize(normal);
+  glm::vec3 pos1 = pos + normal * l3;
+  float e        = sqrtf(pos1.z * pos1.z + pos1.x * pos1.x - dz * dz);
+  a1             = atan2(pos1.z, -pos1.x) + atan2(dz, e);
+  glm::vec3 pos2(e, pos1.y - dy, .0f);
+  a3      = -acosf(std::min(1.0f, (pos2.x * pos2.x + pos2.y * pos2.y - l1 * l1 - l2 * l2) / (2.0f * l1 * l2)));
+  float k = l1 + l2 * cosf(a3), l = l2 * sinf(a3);
+  a2 = -atan2(pos2.y, sqrtf(pos2.x * pos2.x + pos2.z * pos2.z)) - atan2(l, k);
+  glm::vec3 normal1;
+  normal1 = glm::vec3(glm::rotate(glm::mat4(1), glm::radians(-a1), { 0, 0, 1 }) *
+                      glm::vec4(normal.x, normal.y, normal.z, .0f));
+  normal1 = glm::vec3(glm::rotate(glm::mat4(1), glm::radians(-(a2 + a3)), { 0, 1, 0 }) *
+                      glm::vec4(normal1.x, normal1.y, normal1.z, .0f));
+  a5      = acosf(-normal1.x);
+  a4      = std::clamp(atan2(normal1.z, normal1.y), -glm::pi<float>(), glm::pi<float>());
+}
 
 #endif // SYM_BASE_MYLAYER_HH
