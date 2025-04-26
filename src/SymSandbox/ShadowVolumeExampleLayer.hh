@@ -2,11 +2,10 @@
 #define PUMA_SHADOWVOLUMEEXAMPLELAYER_HH
 
 #include "SymBase.hh"
+#include "Utils.hh"
 #include "symbase_pch.hh"
 
 using namespace sym_base;
-
-static std::pair<std::vector<Vertex>, std::vector<uint32_t>> generate_cuboid(glm::vec3 dims, glm::vec3 color);
 
 namespace sym
 {
@@ -25,22 +24,22 @@ namespace sym
 
       // walls
       {
-        auto&& [vertices, indices] = generate_cuboid({ m_walls.m_size, m_walls.m_size, m_walls.m_size }, { 1, 1, 1 });
+        auto&& [vertices, indices] = generate_cuboid({ m_walls.m_size, m_walls.m_size, m_walls.m_size });
         for (auto& v : vertices)
         {
           v.m_normal *= -1;
         }
 
-        m_walls.m_model     = std::make_shared<Model>(vertices,
-                                                  indices,
-                                                  ModelParams{ .m_position = true, .m_color = true, .m_normal = true });
+        m_walls.m_model =
+            std::make_shared<Model>(vertices, indices, ModelParams{ .m_position = true, .m_normal = true });
         m_walls.m_model_mat = glm::translate(glm::mat4(1), glm::vec3(0, m_walls.m_size / 2, 0));
+        m_walls.m_color     = glm::vec3(1, 1, 1);
       }
 
       // light
       {
         const glm::vec3 size       = { .2f, .2f, .2f };
-        auto&& [vertices, indices] = generate_cuboid(size, { 1, 1, 1 });
+        auto&& [vertices, indices] = generate_cuboid(size);
 
         m_light.m_model     = std::make_shared<Model>(vertices, indices, ModelParams{ .m_position = true });
         m_light.m_model_mat = glm::translate(
@@ -52,25 +51,27 @@ namespace sym
       // box1
       {
         const glm::vec3 size       = { 1.f, 2.f, .5f };
-        auto&& [vertices, indices] = generate_cuboid(size, { 0, 1, 0 });
+        auto&& [vertices, indices] = generate_cuboid(size);
 
-        m_box1.m_model = std::make_shared<Model>(
-            vertices,
-            indices,
-            ModelParams{ .m_position = true, .m_color = true, .m_normal = true, .m_use_adjacency = true });
+        m_box1.m_model =
+            std::make_shared<Model>(vertices,
+                                    indices,
+                                    ModelParams{ .m_position = true, .m_normal = true, .m_use_adjacency = true });
         m_box1.m_model_mat = glm::rotate(glm::mat4(1), M_PI_4f, { 0, 1, 0 });
         m_box1.m_model_mat = glm::translate(m_box1.m_model_mat, glm::vec3(0, size.y / 2, -1));
+        m_box1.m_color     = glm::vec3(0, 1, 0);
       }
 
       // box2
       {
         const glm::vec3 size       = { .5f, .5f, .5f };
-        auto&& [vertices, indices] = generate_cuboid(size, { 0, 0, 1 });
+        auto&& [vertices, indices] = generate_cuboid(size);
 
-        m_box2.m_model = std::make_shared<Model>(
-            vertices,
-            indices,
-            ModelParams{ .m_position = true, .m_color = true, .m_normal = true, .m_use_adjacency = true });
+        m_box2.m_model =
+            std::make_shared<Model>(vertices,
+                                    indices,
+                                    ModelParams{ .m_position = true, .m_normal = true, .m_use_adjacency = true });
+        m_box2.m_color       = glm::vec3(0, 0, 1);
         m_box2.m_translation = { .5f, 2.5f, .5f };
       }
     }
@@ -147,6 +148,7 @@ namespace sym
         shader->upload_uniform_float3("u_CameraPos", camera->get_position());
         shader->upload_uniform_float3("u_Light.position", m_light.m_model_mat[3]);
         shader->upload_uniform_float3("u_Light.color", m_light.m_color);
+        shader->upload_uniform_float3("u_Color", m_walls.m_color);
         // walls
         shader->upload_uniform_mat4("u_Model", m_walls.m_model_mat);
         Renderer::submit(*m_walls.m_model);
@@ -188,9 +190,11 @@ namespace sym
         shader->upload_uniform_float3("u_Light.color", m_light.m_color);
         // box1
         shader->upload_uniform_mat4("u_Model", m_box1.m_model_mat);
+        shader->upload_uniform_float3("u_Color", m_box1.m_color);
         Renderer::submit(*m_box1.m_model);
         // box2
         shader->upload_uniform_mat4("u_Model", m_box2.get_model_mat());
+        shader->upload_uniform_float3("u_Color", m_box2.m_color);
         Renderer::submit(*m_box2.m_model);
       }
       shader->unbind();
@@ -207,6 +211,7 @@ namespace sym
       std::shared_ptr<Model> m_model;
       glm::mat4 m_model_mat;
       const float m_size = 5;
+      glm::vec3 m_color;
     } m_walls;
 
     struct
@@ -220,14 +225,16 @@ namespace sym
     {
       std::shared_ptr<Model> m_model;
       glm::mat4 m_model_mat;
+      glm::vec3 m_color;
     } m_box1;
 
     struct
     {
       std::shared_ptr<Model> m_model;
       glm::vec3 m_translation = { 0, 0, 0 };
-      float m_angle           = M_PI_4f;
-      float m_scale           = 1.f;
+      glm::vec3 m_color;
+      float m_angle = M_PI_4f;
+      float m_scale = 1.f;
 
       glm::mat4 get_model_mat()
       {
@@ -238,56 +245,5 @@ namespace sym
     } m_box2;
   };
 } // namespace sym
-
-static std::pair<std::vector<Vertex>, std::vector<uint32_t>> generate_cuboid(glm::vec3 dims, glm::vec3 color)
-{
-  std::vector<Vertex> vertices;
-  std::vector<uint32_t> indices;
-
-  float a2 = dims.x / 2;
-  float b2 = dims.y / 2;
-  float c2 = dims.z / 2;
-
-  glm::vec3 normals[] = {
-    { 0, 0, 1 },  // front
-    { 0, 0, -1 }, // back
-    { -1, 0, 0 }, // left
-    { 1, 0, 0 },  // right
-    { 0, 1, 0 },  // top
-    { 0, -1, 0 }  // bottom
-  };
-
-  glm::vec3 positions[6][4] = { // Front face
-                                { { -a2, -b2, c2 }, { a2, -b2, c2 }, { a2, b2, c2 }, { -a2, b2, c2 } },
-                                // Back face
-                                { { a2, -b2, -c2 }, { -a2, -b2, -c2 }, { -a2, b2, -c2 }, { a2, b2, -c2 } },
-                                // Left face
-                                { { -a2, -b2, -c2 }, { -a2, -b2, c2 }, { -a2, b2, c2 }, { -a2, b2, -c2 } },
-                                // Right face
-                                { { a2, -b2, c2 }, { a2, -b2, -c2 }, { a2, b2, -c2 }, { a2, b2, c2 } },
-                                // Top face
-                                { { -a2, b2, c2 }, { a2, b2, c2 }, { a2, b2, -c2 }, { -a2, b2, -c2 } },
-                                // Bottom face
-                                { { -a2, -b2, -c2 }, { a2, -b2, -c2 }, { a2, -b2, c2 }, { -a2, -b2, c2 } }
-  };
-
-  for (int face = 0; face < 6; ++face)
-  {
-    size_t base_idx = vertices.size();
-    for (int i = 0; i < 4; ++i)
-    {
-      vertices.push_back({ positions[face][i], color, normals[face] });
-    }
-
-    indices.push_back(base_idx);
-    indices.push_back(base_idx + 1);
-    indices.push_back(base_idx + 2);
-    indices.push_back(base_idx);
-    indices.push_back(base_idx + 2);
-    indices.push_back(base_idx + 3);
-  }
-
-  return { vertices, indices };
-}
 
 #endif // PUMA_SHADOWVOLUMEEXAMPLELAYER_HH
