@@ -17,6 +17,8 @@ namespace sym
    public:
     SandboxApp(const ApplicationParams& params) : Application(params)
     {
+      Clock::start();
+
       // create application layers
       push_layer(new InputLayer());
       push_layer(new GuiLayer());
