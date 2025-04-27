@@ -16,8 +16,10 @@ namespace sym
     {
       // shaders
       {
-        m_light_shader = ShaderSystem::acquire("shaders/MirrorExample/light.glsl");
-        m_phong_shader = ShaderSystem::acquire("shaders/MirrorExample/phong.glsl");
+        m_ambient_shader = ShaderSystem::acquire("shaders/MirrorExample/ambient.glsl");
+        m_light_shader   = ShaderSystem::acquire("shaders/MirrorExample/light.glsl");
+        m_phong_shader   = ShaderSystem::acquire("shaders/MirrorExample/phong.glsl");
+        m_mirror_shader  = ShaderSystem::acquire("shaders/MirrorExample/mirror.glsl");
       }
 
       // walls
@@ -42,7 +44,8 @@ namespace sym
             std::make_shared<Model>(vertices, indices, ModelParams{ .m_position = true, .m_normal = true });
         m_mirror.m_model_mat =
             glm::translate(glm::mat4(1), glm::vec3(0, m_mirror.m_size / 2, -m_walls.m_size / 2 + .01f));
-        m_mirror.m_view_mat = glm::scale(m_mirror.m_model_mat, glm::vec3(1, 1, -1)) * glm::inverse(m_mirror.m_model_mat);
+        m_mirror.m_view_mat =
+            glm::scale(m_mirror.m_model_mat, glm::vec3(1, 1, -1)) * glm::inverse(m_mirror.m_model_mat);
         m_mirror.m_color = glm::vec3(1, 1, 0);
       }
 
@@ -110,57 +113,23 @@ namespace sym
       RenderCommand::set_stencil_op(StencilAct::KEEP, StencilAct::KEEP, StencilAct::REPLACE);
       RenderCommand::set_stencil_func(CompFunc::ALWAYS, 1, 0xFF);
 
-      draw_mirror(m_phong_shader);
+      draw_mirror(m_ambient_shader);
 
       RenderCommand::set_color_mask(true, true, true, true);
       RenderCommand::depth_mask(true);
       RenderCommand::set_depth_func(CompFunc::LESS);
       RenderCommand::set_stencil_func(CompFunc::EQUAL, 1, 0xFF);
 
-      glFrontFace(GL_CW);
+      glFrontFace(GL_CW); // TODO:
       draw_boxes(m_phong_shader, m_mirror.m_view_mat);
-      glFrontFace(GL_CCW);
+      glFrontFace(GL_CCW); // TODO:
 
-      //      RenderCommand::set_color_mask(false, false, false, false);
-      //      RenderCommand::stencil_test(true);
-      //      //      glClearStencil(0);
-      //      //      RenderCommand::depth_test(true);
-      //      //      RenderCommand::depth_mask(false);
-      //      RenderCommand::set_stencil_op(StencilAct::KEEP, StencilAct::KEEP, StencilAct::REPLACE);
-      //      RenderCommand::set_stencil_func(CompFunc::ALWAYS, 1, 0xFF);
-      //      //      RenderCommand::stencil_mask(0xFF);
-      //
-      //      draw_mirror(m_phong_shader);
-
-      //      RenderCommand::set_color_mask(true, true, true, true);
-      //      RenderCommand::depth_mask(true);
-
-      // Only draw where stencil equals 1 (the mirror area)
-      //      glStencilFunc(GL_EQUAL, 1, 0xFF);
-      //      RenderCommand::stencil_mask(0x00);
-      //      RenderCommand::depth_test(false);
-
-      //      RenderCommand::stencil_mask(0xFF);
-      // glStencilFunc(GL_ALWAYS, 1, 0xFF);
-      // glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-
-      // RenderCommand::depth_test(true);
-      //      RenderCommand::set_depth_func(CompFunc::LEQUAL);
       RenderCommand::stencil_test(false);
 
-      glEnable(GL_BLEND);
-      glBlendFunc(GL_ONE, GL_ONE);
-      draw_mirror(m_phong_shader);
-      glDisable(GL_BLEND);
-
-      // draw_mirror(m_phong_shader);
-      // draw_walls(m_phong_shader);
+      draw_mirror(m_mirror_shader);
+      draw_walls(m_phong_shader);
       draw_boxes(m_phong_shader, glm::mat4(1));
       draw_lights();
-
-      //      RenderCommand::depth_mask(true);
-      //      RenderCommand::set_depth_func(CompFunc::LEQUAL);
-      //      RenderCommand::stencil_test(false);
     }
 
     virtual void imgui_update(float dt) {}
@@ -180,6 +149,7 @@ namespace sym
         shader->upload_uniform_float3("u_Light.position", m_light.m_model_mat[3]);
         shader->upload_uniform_float3("u_Light.color", m_light.m_color);
         shader->upload_uniform_float3("u_Color", m_mirror.m_color);
+        if (shader == m_mirror_shader) { shader->upload_uniform_float("u_Alpha", m_mirror.m_alpha); }
         // mirror
         shader->upload_uniform_mat4("u_Model", m_mirror.m_model_mat);
         Renderer::submit(*m_mirror.m_model);
@@ -254,8 +224,10 @@ namespace sym
     }
 
    private:
+    Shader* m_ambient_shader;
     Shader* m_light_shader;
     Shader* m_phong_shader;
+    Shader* m_mirror_shader;
 
     struct
     {
@@ -273,6 +245,7 @@ namespace sym
       glm::mat4 m_projection_mat;
       const float m_size = 4;
       glm::vec3 m_color;
+      const float m_alpha = .5f;
     } m_mirror;
 
     struct
