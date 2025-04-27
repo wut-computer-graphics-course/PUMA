@@ -137,8 +137,10 @@ namespace sym
       RenderCommand::depth_mask(false);
       RenderCommand::set_stencil_op_per_face(Face::BACK, StencilAct::KEEP, StencilAct::INCR_WRAP, StencilAct::KEEP);
       RenderCommand::set_stencil_op_per_face(Face::FRONT, StencilAct::KEEP, StencilAct::DECR_WRAP, StencilAct::KEEP);
+      RenderCommand::face_culling(false);
       draw_robot(m_shadow_volume_shader);
       draw_mirror(m_shadow_volume_shader);
+      RenderCommand::face_culling(true);
       RenderCommand::depth_clamp(false);
       // -------------------------------------------------------------------
 
@@ -300,7 +302,7 @@ namespace sym
         // walls
         shader->upload_uniform_mat4("u_Model", m_walls.m_model_mat);
         Renderer::submit(*m_walls.m_model);
-        RenderCommand::face_culling(false);
+        RenderCommand::face_culling(true);
       }
       shader->unbind();
     }
