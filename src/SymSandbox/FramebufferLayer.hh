@@ -4,8 +4,8 @@
 #include "SymBase.hh"
 
 #include "DockSpaceLayer.hh"
-#include "ShadowVolumeExampleLayer.hh"
 #include "MirrorExampleLayer.hh"
+#include "ShadowVolumeExampleLayer.hh"
 #include "SimulationLayer.hh"
 
 using namespace sym_base;
@@ -32,7 +32,7 @@ namespace sym
       m_camera->look_at({ 0, 0, 0 });
 
       // push_child_layer(new SimulationLayer());
-      push_child_layer(new MirrorExampleLayer());
+      // push_child_layer(new MirrorExampleLayer());
       push_child_layer(new SimulationLayer());
       // push_child_layer(new ShadowVolumeExampleLayer());
     }
