@@ -105,12 +105,20 @@ namespace sym
         m_mirror_back.m_model_mat            = translation * rotation;
       }
 
-      // Spark model initialization
-      ModelParams params;
-      params.m_position = true;
-      std::vector<sym_base::Vertex> dummy_vertices(m_max_sparks);
-      std::vector<uint32_t> dummy_indices;
-      m_spark_model = std::make_shared<Model>(dummy_vertices, dummy_indices, params);
+      // spark
+      {
+        m_spark_model = std::make_shared<Model>(ModelParams{});
+        std::vector<SparkParticle> spark_vertices(m_max_sparks);
+        auto instance_buffer = std::make_shared<VertexBuffer>(spark_vertices.data(),
+                                                              spark_vertices.size() * sizeof(glm::vec3),
+                                                              sizeof(glm::vec3));
+        instance_buffer->set_layout({ { SharedDataType::Float3, "inPosition", 0 },
+                                      { SharedDataType::Float3, "inDirection", 0 },
+                                      { SharedDataType::Float, "inThickness", 0 },
+                                      { SharedDataType::Float, "inAge", 0 },
+                                      { SharedDataType::Float, "inLifetime", 0 } });
+        m_spark_model->get_va().add_vertex_buffer(instance_buffer);
+      }
     }
 
     ~SimulationLayer() = default;
@@ -128,27 +136,31 @@ namespace sym
       // ------------
 
       // Spark particle system update
-      if (m_sparks_enabled) {
+      if (m_sparks_enabled)
+      {
         const float spawn_rate = 2000.0f; // particles per second
         m_spark_accum += dt * spawn_rate;
         glm::vec3 eff_pos = glm::vec3(m_robot.m_joints[5].m_model_mat[3]);
         std::uniform_real_distribution<float> dir_dist(-1.0f, 1.0f);
         std::uniform_real_distribution<float> thickness_dist(0.05f, 0.2f);
         std::uniform_real_distribution<float> lifetime_dist(0.5f, 1.5f);
-        while (m_spark_accum >= 1.0f) {
+        while (m_spark_accum >= 1.0f)
+        {
           m_spark_accum -= 1.0f;
-          glm::vec3 dir = glm::normalize(glm::vec3(dir_dist(m_rng), dir_dist(m_rng), dir_dist(m_rng)));
+          glm::vec3 dir   = glm::normalize(glm::vec3(dir_dist(m_rng), dir_dist(m_rng), dir_dist(m_rng)));
           float thickness = thickness_dist(m_rng);
-          float lifetime = lifetime_dist(m_rng);
-          m_sparks.push_back({eff_pos, dir, thickness, 0.0f, lifetime});
+          float lifetime  = lifetime_dist(m_rng);
+          m_sparks.push_back({ eff_pos, dir, thickness, 0.0f, lifetime });
         }
       }
       // Update and remove dead sparks
-      for (auto& p : m_sparks) {
+      for (auto& p : m_sparks)
+      {
         p.position += p.direction * dt * 5.0f;
         p.age += dt;
       }
-      while (!m_sparks.empty() && m_sparks.front().age > m_sparks.front().lifetime) {
+      while (!m_sparks.empty() && m_sparks.front().age > m_sparks.front().lifetime)
+      {
         m_sparks.pop_front();
       }
 
@@ -241,6 +253,7 @@ namespace sym
       // --------------------------
       draw_mirror(m_mirror_shader);
       draw_robot(m_phong_shader);
+      draw_sparks(m_particle_shader);
       draw_lights();
       //  -------------------------
     }
@@ -424,36 +437,26 @@ namespace sym
 
     void draw_sparks(Shader* shader)
     {
-        if (m_sparks.empty()) return;
-        auto camera = Renderer::get_camera();
-        auto vp     = camera->get_projection() * camera->get_view();
+      if (m_sparks.empty()) return;
+      auto camera = Renderer::get_camera();
+      auto vp     = camera->get_projection() * camera->get_view();
 
-        struct SparkVertex {
-            glm::vec3 position;
-            glm::vec3 direction;
-            float thickness;
-            float age;
-            float lifetime;
-        };
+      std::vector<SparkVertex> vertices;
+      vertices.reserve(m_sparks.size());
+      for (const auto& p : m_sparks)
+      {
+        vertices.push_back({ p.position, p.direction, p.thickness, p.age, p.lifetime });
+      }
 
-        std::vector<SparkVertex> vertices;
-        vertices.reserve(m_sparks.size());
-        for (const auto& p : m_sparks) {
-            vertices.push_back({p.position, p.direction, p.thickness, p.age, p.lifetime});
-        }
-
-        m_spark_model->send_vertices(0, vertices.size() * sizeof(SparkVertex), vertices.data());
-        shader->bind();
-        shader->upload_uniform_mat4("u_ViewProjection", vp);
-        shader->upload_uniform_float3("u_CameraPos", camera->get_position());
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        RenderCommand::set_draw_primitive(DrawPrimitive::POINTS);
-        RenderCommand::depth_mask(false);
-        Renderer::submit(*m_spark_model);
-        RenderCommand::depth_mask(true);
-        glDisable(GL_BLEND);
-        shader->unbind();
+      m_spark_model->swap_vertices(vertices.size() * sizeof(SparkVertex), vertices.data(), 0);
+      shader->bind();
+      shader->upload_uniform_mat4("u_ViewProjection", vp);
+      shader->upload_uniform_float3("u_CameraPos", camera->get_position());
+      RenderCommand::set_draw_primitive(DrawPrimitive::POINTS);
+      RenderCommand::depth_mask(false);
+      Renderer::submit(*m_spark_model, vertices.size());
+      RenderCommand::depth_mask(true);
+      shader->unbind();
     }
 
     void draw_mirror_back(Shader* shader)
@@ -559,19 +562,29 @@ namespace sym
       glm::mat4 m_model_mat;
     } m_mirror_back;
 
+    struct SparkVertex
+    {
+      glm::vec3 position;
+      glm::vec3 direction;
+      float thickness;
+      float age;
+      float lifetime;
+    };
+
     // Spark particle system data
-    struct SparkParticle {
-        glm::vec3 position;
-        glm::vec3 direction;
-        float thickness;
-        float age;
-        float lifetime;
+    struct SparkParticle
+    {
+      glm::vec3 position;
+      glm::vec3 direction;
+      float thickness;
+      float age;
+      float lifetime;
     };
     std::deque<SparkParticle> m_sparks;
-    float m_spark_accum = 0.0f;
+    float m_spark_accum   = 0.0f;
     bool m_sparks_enabled = true;
-    std::mt19937 m_rng{std::random_device{}()};
-    size_t m_max_sparks = 5000;
+    std::mt19937 m_rng{ std::random_device{}() };
+    size_t m_max_sparks = 100;
     std::shared_ptr<Model> m_spark_model;
   };
 } // namespace sym
