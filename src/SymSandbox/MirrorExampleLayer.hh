@@ -42,8 +42,7 @@ namespace sym
             std::make_shared<Model>(vertices, indices, ModelParams{ .m_position = true, .m_normal = true });
         m_mirror.m_model_mat =
             glm::translate(glm::mat4(1), glm::vec3(0, m_mirror.m_size / 2, -m_walls.m_size / 2 + .01f));
-        m_mirror.m_view_mat = glm::scale(m_mirror.m_model_mat, glm::vec3(1, -1, 1));
-        // glm::scale(m_mirror.m_model_mat, glm::vec3(1, -1, 1)) * glm::inverse(m_mirror.m_model_mat);
+        m_mirror.m_view_mat = glm::scale(m_mirror.m_model_mat, glm::vec3(1, 1, -1)) * glm::inverse(m_mirror.m_model_mat);
         m_mirror.m_color = glm::vec3(1, 1, 0);
       }
 
@@ -148,6 +147,11 @@ namespace sym
       // RenderCommand::depth_test(true);
       //      RenderCommand::set_depth_func(CompFunc::LEQUAL);
       RenderCommand::stencil_test(false);
+
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_ONE, GL_ONE);
+      draw_mirror(m_phong_shader);
+      glDisable(GL_BLEND);
 
       // draw_mirror(m_phong_shader);
       // draw_walls(m_phong_shader);
