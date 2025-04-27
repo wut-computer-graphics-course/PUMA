@@ -6,6 +6,7 @@
 #include "Events/GuiSimulationPausedEvent.hh"
 #include "Events/GuiSimulationResumedEvent.hh"
 #include "Utils.hh"
+#include <random>
 
 #define SHADOW_VOLUME_PASS // Comment to skip rendering shadow volumes
 #define MIRROR_PASS        // Comment to skip rendering mirror
@@ -37,6 +38,7 @@ namespace sym
         m_phong_shader         = ShaderSystem::acquire("shaders/phong.glsl");
         m_shadow_volume_shader = ShaderSystem::acquire("shaders/shadow_volume.glsl");
         m_mirror_shader        = ShaderSystem::acquire("shaders/mirror.glsl");
+        m_particle_shader      = ShaderSystem::acquire("shaders/spark_billboard.glsl");
       }
 
       // walls
@@ -102,6 +104,13 @@ namespace sym
         translation                          = glm::translate(translation, glm::vec3(-.01f, 0, 0));
         m_mirror_back.m_model_mat            = translation * rotation;
       }
+
+      // Spark model initialization
+      ModelParams params;
+      params.m_position = true;
+      std::vector<sym_base::Vertex> dummy_vertices(m_max_sparks);
+      std::vector<uint32_t> dummy_indices;
+      m_spark_model = std::make_shared<Model>(dummy_vertices, dummy_indices, params);
     }
 
     ~SimulationLayer() = default;
@@ -117,6 +126,31 @@ namespace sym
         update_robot(dt);
       }
       // ------------
+
+      // Spark particle system update
+      if (m_sparks_enabled) {
+        const float spawn_rate = 2000.0f; // particles per second
+        m_spark_accum += dt * spawn_rate;
+        glm::vec3 eff_pos = glm::vec3(m_robot.m_joints[5].m_model_mat[3]);
+        std::uniform_real_distribution<float> dir_dist(-1.0f, 1.0f);
+        std::uniform_real_distribution<float> thickness_dist(0.05f, 0.2f);
+        std::uniform_real_distribution<float> lifetime_dist(0.5f, 1.5f);
+        while (m_spark_accum >= 1.0f) {
+          m_spark_accum -= 1.0f;
+          glm::vec3 dir = glm::normalize(glm::vec3(dir_dist(m_rng), dir_dist(m_rng), dir_dist(m_rng)));
+          float thickness = thickness_dist(m_rng);
+          float lifetime = lifetime_dist(m_rng);
+          m_sparks.push_back({eff_pos, dir, thickness, 0.0f, lifetime});
+        }
+      }
+      // Update and remove dead sparks
+      for (auto& p : m_sparks) {
+        p.position += p.direction * dt * 5.0f;
+        p.age += dt;
+      }
+      while (!m_sparks.empty() && m_sparks.front().age > m_sparks.front().lifetime) {
+        m_sparks.pop_front();
+      }
 
       /* ==========================================================================================================  */
       /* ============================================= SHADOW VOLUMES =============================================  */
@@ -236,6 +270,9 @@ namespace sym
         item_max.y += padding;
         draw_list->AddRect(item_min, item_max, ImGui::GetColorU32(ImGuiCol_Border), rounding, 0, thickness);
         ImGui::Dummy(ImVec2(0, 5));
+        ImGui::Separator();
+        ImGui::Text("Sparks");
+        ImGui::Checkbox("Enabled", &m_sparks_enabled);
       }
       ImGui::End();
     }
@@ -385,6 +422,40 @@ namespace sym
       shader->unbind();
     }
 
+    void draw_sparks(Shader* shader)
+    {
+        if (m_sparks.empty()) return;
+        auto camera = Renderer::get_camera();
+        auto vp     = camera->get_projection() * camera->get_view();
+
+        struct SparkVertex {
+            glm::vec3 position;
+            glm::vec3 direction;
+            float thickness;
+            float age;
+            float lifetime;
+        };
+
+        std::vector<SparkVertex> vertices;
+        vertices.reserve(m_sparks.size());
+        for (const auto& p : m_sparks) {
+            vertices.push_back({p.position, p.direction, p.thickness, p.age, p.lifetime});
+        }
+
+        m_spark_model->send_vertices(0, vertices.size() * sizeof(SparkVertex), vertices.data());
+        shader->bind();
+        shader->upload_uniform_mat4("u_ViewProjection", vp);
+        shader->upload_uniform_float3("u_CameraPos", camera->get_position());
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        RenderCommand::set_draw_primitive(DrawPrimitive::POINTS);
+        RenderCommand::depth_mask(false);
+        Renderer::submit(*m_spark_model);
+        RenderCommand::depth_mask(true);
+        glDisable(GL_BLEND);
+        shader->unbind();
+    }
+
     void draw_mirror_back(Shader* shader)
     {
       auto camera = Renderer::get_camera();
@@ -449,6 +520,7 @@ namespace sym
     Shader* m_phong_shader;
     Shader* m_shadow_volume_shader;
     Shader* m_mirror_shader;
+    Shader* m_particle_shader;
 
     struct
     {
@@ -486,6 +558,21 @@ namespace sym
       std::shared_ptr<Model> m_model;
       glm::mat4 m_model_mat;
     } m_mirror_back;
+
+    // Spark particle system data
+    struct SparkParticle {
+        glm::vec3 position;
+        glm::vec3 direction;
+        float thickness;
+        float age;
+        float lifetime;
+    };
+    std::deque<SparkParticle> m_sparks;
+    float m_spark_accum = 0.0f;
+    bool m_sparks_enabled = true;
+    std::mt19937 m_rng{std::random_device{}()};
+    size_t m_max_sparks = 5000;
+    std::shared_ptr<Model> m_spark_model;
   };
 } // namespace sym
 
