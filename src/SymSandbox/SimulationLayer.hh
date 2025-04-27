@@ -7,7 +7,8 @@
 #include "Events/GuiSimulationResumedEvent.hh"
 #include "Utils.hh"
 
-#define SHADOW_VOLUMES // Comment to skip rendering shadow volumes
+#define SHADOW_VOLUME_PASS // Comment to skip rendering shadow volumes
+#define MIRROR_PASS        // Comment to skip rendering mirror
 
 using namespace sym_base;
 
@@ -35,6 +36,7 @@ namespace sym
         m_light_shader         = ShaderSystem::acquire("shaders/light.glsl");
         m_phong_shader         = ShaderSystem::acquire("shaders/phong.glsl");
         m_shadow_volume_shader = ShaderSystem::acquire("shaders/shadow_volume.glsl");
+        m_mirror_shader        = ShaderSystem::acquire("shaders/mirror.glsl");
       }
 
       // walls
@@ -66,7 +68,7 @@ namespace sym
       // robot
       {
         ModelParams params{ .m_position = true, .m_normal = true };
-#ifdef SHADOW_VOLUMES
+#ifdef SHADOW_VOLUME_PASS
         params.m_use_adjacency = true;
 #endif
         for (size_t i = 0; i < m_robot.m_joints.size(); i++)
@@ -81,7 +83,7 @@ namespace sym
         auto&& [vertices, indices] = generate_cuboid({ m_mirror.m_size, m_mirror.m_size, 0.01f });
 
         ModelParams params{ .m_position = true, .m_normal = true };
-#ifdef SHADOW_VOLUMES
+#ifdef SHADOW_VOLUME_PASS
         params.m_use_adjacency = true;
 #endif
         m_mirror.m_model = std::make_shared<Model>(vertices, indices, params);
@@ -90,7 +92,9 @@ namespace sym
         auto robot_head_offset = 2 * robot_translations[5].x; // Scaling robot required multiplying by 2
         auto translation       = glm::translate(glm::mat4(1), glm::vec3(robot_head_offset, m_mirror.m_size / 2, .5f));
         m_mirror.m_model_mat   = translation * rotation;
-        m_mirror.m_color       = glm::vec3(1, 1, 0);
+        m_mirror.m_view_mat =
+            glm::scale(m_mirror.m_model_mat, glm::vec3(1, 1, -1)) * glm::inverse(m_mirror.m_model_mat);
+        m_mirror.m_color = glm::vec3(1, 1, 0);
       }
     }
 
@@ -108,21 +112,26 @@ namespace sym
       }
       // ------------
 
-#ifdef SHADOW_VOLUMES
+      /* ==========================================================================================================  */
+      /* ============================================= SHADOW VOLUMES =============================================  */
+      /* ==========================================================================================================  */
+
+#ifdef SHADOW_VOLUME_PASS
       // -------------------------------------------------
       // Ambient pass to make sure z-buffer contains data
       // -------------------------------------------------
+      RenderCommand::depth_test(true);
       draw_walls(m_ambient_shader);
       draw_robot(m_ambient_shader);
       draw_mirror(m_ambient_shader);
       draw_lights();
       // -------------------------------------------------
 
+      // -------------------------------------------------------------------
       // Create shadow volumes of objects and render into the stencil buffer
       // -------------------------------------------------------------------
       RenderCommand::set_color_mask(false, false, false, false);
       RenderCommand::stencil_test(true);
-      RenderCommand::depth_test(true);
       RenderCommand::set_stencil_func(CompFunc::ALWAYS, 0, 0xFF);
       RenderCommand::depth_clamp(true);
       RenderCommand::depth_mask(false);
@@ -144,17 +153,53 @@ namespace sym
       RenderCommand::depth_test(true);
 #endif
 
+      draw_mirror(m_mirror_shader);
       draw_walls(m_phong_shader);
+#ifndef MIRROR_PASS
       draw_robot(m_phong_shader);
-      draw_mirror(m_phong_shader);
-      draw_lights();
+#endif
 
-#ifdef SHADOW_VOLUMES
+#ifdef SHADOW_VOLUME_PASS
       RenderCommand::depth_mask(true);
-      RenderCommand::set_depth_func(CompFunc::LEQUAL);
+      RenderCommand::set_depth_func(CompFunc::LESS);
       RenderCommand::stencil_test(false);
 #endif
-      // ------------------------------------------------------------------------------------
+
+      /* ==========================================================================================================  */
+      /* ================================================= MIRROR =================================================  */
+      /* ==========================================================================================================  */
+
+#ifdef MIRROR_PASS
+      RenderCommand::clear(ClearBufferMask::DEPTH_BUFFER_BIT | ClearBufferMask::STENCIL_BUFFER_BIT);
+
+      RenderCommand::depth_test(true);
+      RenderCommand::set_color_mask(false, false, false, false);
+      RenderCommand::stencil_test(true);
+      RenderCommand::depth_mask(false);
+      RenderCommand::set_stencil_op(StencilAct::KEEP, StencilAct::KEEP, StencilAct::REPLACE);
+      RenderCommand::set_stencil_func(CompFunc::ALWAYS, 1, 0xFF);
+
+      draw_mirror(m_ambient_shader);
+
+      RenderCommand::set_color_mask(true, true, true, true);
+      RenderCommand::depth_mask(true);
+      RenderCommand::set_depth_func(CompFunc::LESS);
+      RenderCommand::set_stencil_func(CompFunc::EQUAL, 1, 0xFF);
+
+      glFrontFace(GL_CW); // TODO:
+      draw_robot(m_phong_shader, m_mirror.m_view_mat);
+      glFrontFace(GL_CCW); // TODO:
+
+      RenderCommand::stencil_test(false);
+#endif
+
+      // --------------------------
+      // Render rest of the scene
+      // --------------------------
+      draw_mirror(m_mirror_shader);
+      draw_robot(m_phong_shader);
+      draw_lights();
+      //  -------------------------
     }
 
     void imgui_update(float dt) override
@@ -260,14 +305,14 @@ namespace sym
       shader->unbind();
     }
 
-    void draw_robot(Shader* shader)
+    void draw_robot(Shader* shader, glm::mat4 camera_transform = glm::mat4(1))
     {
       auto camera = Renderer::get_camera();
-      auto vp     = camera->get_projection() * camera->get_view();
+      auto vp     = camera->get_projection() * camera->get_view() * camera_transform;
 
       shader->bind();
       {
-#ifdef SHADOW_VOLUMES
+#ifdef SHADOW_VOLUME_PASS
         RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES_ADJACENCY);
 #else
         RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
@@ -312,7 +357,7 @@ namespace sym
 
       shader->bind();
       {
-#ifdef SHADOW_VOLUMES
+#ifdef SHADOW_VOLUME_PASS
         RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES_ADJACENCY);
 #else
         RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
@@ -323,6 +368,7 @@ namespace sym
         shader->upload_uniform_float3("u_Light.position", m_light.m_model_mat[3]);
         shader->upload_uniform_float3("u_Light.color", m_light.m_color);
         shader->upload_uniform_float3("u_Color", m_mirror.m_color);
+        if (shader == m_mirror_shader) { shader->upload_uniform_float("u_Alpha", m_mirror.m_alpha); }
         // mirror
         shader->upload_uniform_mat4("u_Model", m_mirror.m_model_mat);
         Renderer::submit(*m_mirror.m_model);
@@ -367,6 +413,7 @@ namespace sym
     Shader* m_light_shader;
     Shader* m_phong_shader;
     Shader* m_shadow_volume_shader;
+    Shader* m_mirror_shader;
 
     struct
     {
@@ -393,7 +440,9 @@ namespace sym
     {
       std::shared_ptr<Model> m_model;
       glm::mat4 m_model_mat;
-      const float m_size = 4;
+      glm::mat4 m_view_mat;
+      const float m_size  = 4;
+      const float m_alpha = .5f;
       glm::vec3 m_color;
     } m_mirror;
   };
