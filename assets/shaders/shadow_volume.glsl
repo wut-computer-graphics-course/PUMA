@@ -87,10 +87,7 @@ void main()
         lightDirs[1] = normalize(vertPos[neighbor] - lightPos);
         lightDirs[2] = normalize(vertPos[end] - lightPos);
 
-        // Extrude if possible silhuette (neighbor triangle does not face light)
-        if (dot(normal, lightDirs[0]) > 0) {
-            ExtrudeEdge(vertPos[start], vertPos[end]);
-        }
+        ExtrudeEdge(vertPos[start], vertPos[end]);
     }
 
     // Render front cap
