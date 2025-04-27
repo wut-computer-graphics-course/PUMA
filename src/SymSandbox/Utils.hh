@@ -55,6 +55,41 @@ namespace sym
 
     return { vertices, indices };
   }
+
+  static std::pair<std::vector<sym_base::Vertex>, std::vector<uint32_t>> generate_square(glm::vec2 dims)
+  {
+    std::vector<sym_base::Vertex> vertices;
+    std::vector<uint32_t> indices;
+
+    float a2 = dims.x / 2;
+    float b2 = dims.y / 2;
+
+    glm::vec3 normals[] = {
+      { 0, 0, 1 }, // front
+    };
+
+    glm::vec3 positions[1][4] = { // Front face
+                                  { { -a2, -b2, 0 }, { a2, -b2, 0 }, { a2, b2, 0 }, { -a2, b2, 0 } }
+    };
+
+    for (int face = 0; face < 1; ++face)
+    {
+      size_t base_idx = vertices.size();
+      for (int i = 0; i < 4; ++i)
+      {
+        vertices.push_back({ positions[face][i], {}, normals[face] });
+      }
+
+      indices.push_back(base_idx);
+      indices.push_back(base_idx + 1);
+      indices.push_back(base_idx + 2);
+      indices.push_back(base_idx);
+      indices.push_back(base_idx + 2);
+      indices.push_back(base_idx + 3);
+    }
+
+    return { vertices, indices };
+  }
 } // namespace sym
 
 #endif // PUMA_UTILS_HH
