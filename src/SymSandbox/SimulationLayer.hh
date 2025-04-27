@@ -4,6 +4,7 @@
 #include "SymBase.hh"
 #include "Utils.hh"
 #include "symbase_pch.hh"
+#include "glm/gtx/rotate_vector.hpp"
 
 #define SHADOW_VOLUMES // Comment to skip rendering shadow volumes
 
@@ -129,15 +130,15 @@ namespace sym
                                                        glm::vec3(0, 0, 0),
                                                        glm::vec3(0.0f, 0.27f, 0.0f),
                                                        glm::vec3(-0.91f, 0.27f, 0.0f),
-                                                       glm::vec3(-1.72f + 0.1f, 0.27f, 0.0f),
+                                                       glm::vec3(0.0f, 0.27f, -0.26f),
                                                        glm::vec3(-2.05f + 0.3f, 0.27f, 0.0f) };
       static std::array<glm::vec3, 6> axes         = { glm::vec3(0, 1, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1),
-                                                       glm::vec3(0, 0, 1), glm::vec3(0, 0, 1), glm::vec3(0, 0, 1) };
+                                                       glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec3(0, 0, 1) };
 
       auto& joint0       = m_robot.m_joints[0];
       joint0.m_model_mat = glm::rotate(glm::mat4(1), joint0.m_angle, axes[0]);
       joint0.m_model_mat = glm::translate(joint0.m_model_mat, translations[0]);
-      joint0.m_model_mat = glm::scale(joint0.m_model_mat, { 2, 2, 2 });
+      // joint0.m_model_mat = glm::scale(joint0.m_model_mat, { 2, 2, 2 });
 
       for (size_t i = 1; i < m_robot.m_joints.size(); i++)
       {
@@ -162,11 +163,11 @@ namespace sym
       static float a       = 0;
       a += dt;
 
-      static glm::vec3 pos = glm::vec3(-2.05f, 0.27f, 0.0f);
+      static glm::vec3 pos = glm::vec3(-2.25f, 0.27f, 0.0f);
       pos.y += std::cos(a) * r;
       pos.z += std::sin(a) * r;
 
-      inverse_kinematics(pos, glm::normalize(glm::vec3(-1, 0, 0)), a1, a2, a3, a4, a5);
+      inverse_kinematics(pos, glm::normalize(glm::vec3(1, 0, 0)), a1, a2, a3, a4, a5);
 
       // -------------------------------------------------------------------------------------------
       // -------------------------------------------------------------------------------------------
@@ -317,24 +318,52 @@ namespace sym
   };
 } // namespace sym
 
-static void inverse_kinematics(glm::vec3 pos, glm::vec3 normal, float& a1, float& a2, float& a3, float& a4, float& a5)
-{
+// static void inverse_kinematics(glm::vec3 pos, glm::vec3 normal, float& a1, float& a2, float& a3, float& a4, float& a5)
+// {
+//   float l1 = .91f, l2 = .81f, l3 = .33f, dy = .27f, dz = .26f;
+//   normal         = glm::normalize(normal);
+//   glm::vec3 pos1 = pos + normal * l3;
+//   float e        = sqrtf(pos1.z * pos1.z + pos1.x * pos1.x - dz * dz);
+//   a1             = atan2(pos1.z, -pos1.x) + atan2(dz, e);
+//   glm::vec3 pos2(e, pos1.y - dy, .0f);
+//   a3      = -acosf(std::min(1.0f, (pos2.x * pos2.x + pos2.y * pos2.y - l1 * l1 - l2 * l2) / (2.0f * l1 * l2)));
+//   float k = l1 + l2 * cosf(a3), l = l2 * sinf(a3);
+//   a2 = -atan2(pos2.y, sqrtf(pos2.x * pos2.x + pos2.z * pos2.z)) - atan2(l, k);
+//   glm::vec3 normal1;
+//   normal1 = glm::vec3(glm::rotate(glm::mat4(1), glm::radians(-a1), { 0, 0, 1 }) *
+//                       glm::vec4(normal.x, normal.y, normal.z, .0f));
+//   normal1 = glm::vec3(glm::rotate(glm::mat4(1), glm::radians(-(a2 + a3)), { 0, 1, 0 }) *
+//                       glm::vec4(normal1.x, normal1.y, normal1.z, .0f));
+//   a5      = acosf(-normal1.x);
+//   a4      = std::clamp(atan2(normal1.z, normal1.y), -glm::pi<float>(), glm::pi<float>());
+// }
+
+static void inverse_kinematics(glm::vec3 pos, glm::vec3 normal, float& a1, float& a2, float& a3, float& a4, float& a5) {
   float l1 = .91f, l2 = .81f, l3 = .33f, dy = .27f, dz = .26f;
-  normal         = glm::normalize(normal);
-  glm::vec3 pos1 = pos + normal * l3;
-  float e        = sqrtf(pos1.z * pos1.z + pos1.x * pos1.x - dz * dz);
-  a1             = atan2(pos1.z, -pos1.x) + atan2(dz, e);
-  glm::vec3 pos2(e, pos1.y - dy, .0f);
-  a3      = -acosf(std::min(1.0f, (pos2.x * pos2.x + pos2.y * pos2.y - l1 * l1 - l2 * l2) / (2.0f * l1 * l2)));
-  float k = l1 + l2 * cosf(a3), l = l2 * sinf(a3);
-  a2 = -atan2(pos2.y, sqrtf(pos2.x * pos2.x + pos2.z * pos2.z)) - atan2(l, k);
-  glm::vec3 normal1;
-  normal1 = glm::vec3(glm::rotate(glm::mat4(1), glm::radians(-a1), { 0, 0, 1 }) *
-                      glm::vec4(normal.x, normal.y, normal.z, .0f));
-  normal1 = glm::vec3(glm::rotate(glm::mat4(1), glm::radians(-(a2 + a3)), { 0, 1, 0 }) *
-                      glm::vec4(normal1.x, normal1.y, normal1.z, .0f));
-  a5      = acosf(-normal1.x);
-  a4      = std::clamp(atan2(normal1.z, normal1.y), -glm::pi<float>(), glm::pi<float>());
+
+  glm::vec3 normalized_normal = glm::normalize(normal);
+  glm::vec3 pos1 = pos + normalized_normal * l3;
+
+  float e = sqrtf(pos1.z * pos1.z + pos1.x * pos1.x - dz * dz);
+  a1 = atan2f(pos1.z, -pos1.x) + atan2f(dz, e);
+
+  glm::vec3 pos2(e, pos1.y - dy, 0.0f);
+  a3 = -acosf(std::min(1.0f, (pos2.x * pos2.x + pos2.y * pos2.y - l1 * l1 - l2 * l2) / (2.0f * l1 * l2)));
+
+  float k = l1 + l2 * cosf(a3);
+  float l_prime = l2 * sinf(a3);
+  a2 = -atan2f(pos2.y, sqrtf(pos2.x * pos2.x + pos2.z * pos2.z)) - atan2f(l_prime, k);
+
+  glm::mat4 rotate_y_neg_a1 = glm::rotate(glm::mat4(1.0f), -a1, glm::vec3(0.0f, 1.0f, 0.0f));
+  glm::vec4 normal1_vec4 = rotate_y_neg_a1 * glm::vec4(normalized_normal.x, normalized_normal.y, normalized_normal.z, 0.0f);
+  glm::vec3 normal1(normal1_vec4.x, normal1_vec4.y, normal1_vec4.z);
+
+  glm::mat4 rotate_z_neg_a2_plus_a3 = glm::rotate(glm::mat4(1.0f), -(a2 + a3), glm::vec3(0.0f, 0.0f, 1.0f));
+  normal1_vec4 = rotate_z_neg_a2_plus_a3 * glm::vec4(normal1.x, normal1.y, normal1.z, 0.0f);
+  normal1 = glm::vec3(normal1_vec4.x, normal1_vec4.y, normal1_vec4.z);
+
+  a5 = acosf(normal1.x);
+  a4 = atan2f(normal1.z, normal1.y);
 }
 
 #endif // SYM_BASE_MYLAYER_HH
