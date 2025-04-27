@@ -4,6 +4,8 @@
 #include "SymBase.hh"
 
 #include "DockSpaceLayer.hh"
+#include "Events/GuiSimulationPausedEvent.hh"
+#include "Events/GuiSimulationResumedEvent.hh"
 
 using namespace sym_base;
 
@@ -33,6 +35,27 @@ namespace sym
         ImGui::Text("FPS: %.1f", m_fps_manager.m_current_fps);
         ImGui::Text("Simulation time: %.1f", Clock::now());
         ImGui::Spacing();
+        static bool simulation_paused = false;
+        if (simulation_paused)
+        {
+          if (ImGui::Button("Resume", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+          {
+            Clock::resume();
+            GuiSimulationResumedEvent e{};
+            Application::get().post_event(e);
+            simulation_paused = false;
+          }
+        }
+        else
+        {
+          if (ImGui::Button("Pause", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+          {
+            Clock::pause();
+            GuiSimulationPausedEvent e{};
+            Application::get().post_event(e);
+            simulation_paused = true;
+          }
+        }
       }
       ImGui::End();
     }
