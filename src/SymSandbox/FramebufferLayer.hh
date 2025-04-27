@@ -26,8 +26,9 @@ namespace sym
         m_framebuffer.m_buffer->create_multisampled_buffer();
       }
 
-      m_camera = std::make_shared<OrbitCamera>();
+      m_camera = std::make_shared<FpsCamera>();
       m_camera->set_position({ 0, 5, 5 });
+      m_camera->look_at({ 0, 0, 0 });
 
       push_child_layer(new SimulationLayer());
       // push_child_layer(new ShadowVolumeExampleLayer());
@@ -99,7 +100,7 @@ namespace sym
       float m_win_height      = 600;
     } m_framebuffer;
 
-    std::shared_ptr<OrbitCamera> m_camera;
+    std::shared_ptr<FpsCamera> m_camera;
   };
 } // namespace sym
 

@@ -335,7 +335,7 @@ namespace sym
       static bool first_time = true;
       if (first_time)
       {
-        auto camera = dynamic_cast<OrbitCamera*>(Renderer::get_camera());
+        auto camera = dynamic_cast<FpsCamera*>(Renderer::get_camera());
         if (camera) { camera->look_at({ 0, 5.f / 2, 0 }); }
         first_time = false;
       }
