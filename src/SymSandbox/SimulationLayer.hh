@@ -15,6 +15,15 @@ static void inverse_kinematics(glm::vec3 pos, glm::vec3 normal, float& a1, float
 
 namespace sym
 {
+  static std::array<glm::vec3, 6> robot_translations = { glm::vec3(0, 2, 0),
+                                                         glm::vec3(0, 0, 0),
+                                                         glm::vec3(0.0f, 0.27f, 0.0f),
+                                                         glm::vec3(-0.91f, 0.27f, 0.0f),
+                                                         glm::vec3(0.0f, 0.27f, -0.26f),
+                                                         glm::vec3(-2.05f + 0.3f, 0.27f, 0.0f) };
+  static std::array<glm::vec3, 6> robot_axes         = { glm::vec3(0, 1, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1),
+                                                         glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec3(0, 0, 1) };
+
   class SimulationLayer : public Layer
   {
    public:
@@ -66,6 +75,23 @@ namespace sym
         }
         m_robot.m_color = glm::vec3(1, 1, 1);
       }
+
+      // mirror
+      {
+        auto&& [vertices, indices] = generate_cuboid({ m_mirror.m_size, m_mirror.m_size, 0.01f });
+
+        ModelParams params{ .m_position = true, .m_normal = true };
+#ifdef SHADOW_VOLUMES
+        params.m_use_adjacency = true;
+#endif
+        m_mirror.m_model = std::make_shared<Model>(vertices, indices, params);
+
+        auto rotation          = glm::rotate(glm::mat4(1), M_PI_2f, glm::vec3(0, 1, 0));
+        auto robot_head_offset = 2 * robot_translations[5].x; // Scaling robot required multiplying by 2
+        auto translation       = glm::translate(glm::mat4(1), glm::vec3(robot_head_offset, m_mirror.m_size / 2, .5f));
+        m_mirror.m_model_mat   = translation * rotation;
+        m_mirror.m_color       = glm::vec3(1, 1, 0);
+      }
     }
 
     ~SimulationLayer() = default;
@@ -88,6 +114,7 @@ namespace sym
       // -------------------------------------------------
       draw_walls(m_ambient_shader);
       draw_robot(m_ambient_shader);
+      draw_mirror(m_ambient_shader);
       draw_lights();
       // -------------------------------------------------
 
@@ -102,6 +129,7 @@ namespace sym
       RenderCommand::set_stencil_op_per_face(Face::BACK, StencilAct::KEEP, StencilAct::INCR_WRAP, StencilAct::KEEP);
       RenderCommand::set_stencil_op_per_face(Face::FRONT, StencilAct::KEEP, StencilAct::DECR_WRAP, StencilAct::KEEP);
       draw_robot(m_shadow_volume_shader);
+      draw_mirror(m_shadow_volume_shader);
       RenderCommand::depth_clamp(false);
       // -------------------------------------------------------------------
 
@@ -118,6 +146,7 @@ namespace sym
 
       draw_walls(m_phong_shader);
       draw_robot(m_phong_shader);
+      draw_mirror(m_phong_shader);
       draw_lights();
 
 #ifdef SHADOW_VOLUMES
@@ -169,26 +198,17 @@ namespace sym
    private:
     void update_robot(float dt)
     {
-      static std::array<glm::vec3, 6> translations = { glm::vec3(0, 2, 0),
-                                                       glm::vec3(0, 0, 0),
-                                                       glm::vec3(0.0f, 0.27f, 0.0f),
-                                                       glm::vec3(-0.91f, 0.27f, 0.0f),
-                                                       glm::vec3(0.0f, 0.27f, -0.26f),
-                                                       glm::vec3(-2.05f + 0.3f, 0.27f, 0.0f) };
-      static std::array<glm::vec3, 6> axes         = { glm::vec3(0, 1, 0), glm::vec3(0, 1, 0), glm::vec3(0, 0, 1),
-                                                       glm::vec3(0, 0, 1), glm::vec3(1, 0, 0), glm::vec3(0, 0, 1) };
-
       auto& joint0       = m_robot.m_joints[0];
-      joint0.m_model_mat = glm::rotate(glm::mat4(1), joint0.m_angle, axes[0]);
-      joint0.m_model_mat = glm::translate(joint0.m_model_mat, translations[0]);
-      // joint0.m_model_mat = glm::scale(joint0.m_model_mat, { 2, 2, 2 });
+      joint0.m_model_mat = glm::rotate(glm::mat4(1), joint0.m_angle, robot_axes[0]);
+      joint0.m_model_mat = glm::translate(joint0.m_model_mat, robot_translations[0]);
+      joint0.m_model_mat = glm::scale(joint0.m_model_mat, { 2, 2, 2 });
 
       for (size_t i = 1; i < m_robot.m_joints.size(); i++)
       {
         auto& joint       = m_robot.m_joints[i];
-        joint.m_model_mat = glm::translate(glm::mat4(1), translations[i]);
-        joint.m_model_mat = glm::rotate(joint.m_model_mat, joint.m_angle, axes[i]);
-        joint.m_model_mat = glm::translate(joint.m_model_mat, -translations[i]);
+        joint.m_model_mat = glm::translate(glm::mat4(1), robot_translations[i]);
+        joint.m_model_mat = glm::rotate(joint.m_model_mat, joint.m_angle, robot_axes[i]);
+        joint.m_model_mat = glm::translate(joint.m_model_mat, -robot_translations[i]);
         joint.m_model_mat = m_robot.m_joints[i - 1].m_model_mat * joint.m_model_mat;
       }
 
@@ -202,15 +222,15 @@ namespace sym
       float& a4 = m_robot.m_joints[4].m_angle;
       float& a5 = m_robot.m_joints[5].m_angle;
 
-      static const float r = .025f;
+      static const float r = .015f;
       static float a       = 0;
-      a += dt;
+      a += 2 * dt;
 
-      static glm::vec3 pos = glm::vec3(-2.25f, 0.27f, 0.0f);
+      static glm::vec3 pos = robot_translations[5];
       pos.y += std::cos(a) * r;
       pos.z += std::sin(a) * r;
 
-      inverse_kinematics(pos, glm::normalize(glm::vec3(1, 0, 0)), a1, a2, a3, a4, a5);
+      inverse_kinematics(pos, glm::vec3(1, 0, 0), a1, a2, a3, a4, a5);
 
       // -------------------------------------------------------------------------------------------
       // -------------------------------------------------------------------------------------------
@@ -285,6 +305,31 @@ namespace sym
       m_light_shader->unbind();
     }
 
+    void draw_mirror(Shader* shader)
+    {
+      auto camera = Renderer::get_camera();
+      auto vp     = camera->get_projection() * camera->get_view();
+
+      shader->bind();
+      {
+#ifdef SHADOW_VOLUMES
+        RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES_ADJACENCY);
+#else
+        RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
+#endif
+        RenderCommand::set_line_width(1);
+        shader->upload_uniform_mat4("u_ViewProjection", vp);
+        shader->upload_uniform_float3("u_CameraPos", camera->get_position());
+        shader->upload_uniform_float3("u_Light.position", m_light.m_model_mat[3]);
+        shader->upload_uniform_float3("u_Light.color", m_light.m_color);
+        shader->upload_uniform_float3("u_Color", m_mirror.m_color);
+        // mirror
+        shader->upload_uniform_mat4("u_Model", m_mirror.m_model_mat);
+        Renderer::submit(*m_mirror.m_model);
+      }
+      shader->unbind();
+    }
+
     void update_camera(float dt)
     {
       static bool first_time = true;
@@ -343,52 +388,42 @@ namespace sym
       std::array<PumaJoint, 6> m_joints;
       glm::vec3 m_color;
     } m_robot;
+
+    struct
+    {
+      std::shared_ptr<Model> m_model;
+      glm::mat4 m_model_mat;
+      const float m_size = 4;
+      glm::vec3 m_color;
+    } m_mirror;
   };
 } // namespace sym
 
-// static void inverse_kinematics(glm::vec3 pos, glm::vec3 normal, float& a1, float& a2, float& a3, float& a4, float& a5)
-// {
-//   float l1 = .91f, l2 = .81f, l3 = .33f, dy = .27f, dz = .26f;
-//   normal         = glm::normalize(normal);
-//   glm::vec3 pos1 = pos + normal * l3;
-//   float e        = sqrtf(pos1.z * pos1.z + pos1.x * pos1.x - dz * dz);
-//   a1             = atan2(pos1.z, -pos1.x) + atan2(dz, e);
-//   glm::vec3 pos2(e, pos1.y - dy, .0f);
-//   a3      = -acosf(std::min(1.0f, (pos2.x * pos2.x + pos2.y * pos2.y - l1 * l1 - l2 * l2) / (2.0f * l1 * l2)));
-//   float k = l1 + l2 * cosf(a3), l = l2 * sinf(a3);
-//   a2 = -atan2(pos2.y, sqrtf(pos2.x * pos2.x + pos2.z * pos2.z)) - atan2(l, k);
-//   glm::vec3 normal1;
-//   normal1 = glm::vec3(glm::rotate(glm::mat4(1), glm::radians(-a1), { 0, 0, 1 }) *
-//                       glm::vec4(normal.x, normal.y, normal.z, .0f));
-//   normal1 = glm::vec3(glm::rotate(glm::mat4(1), glm::radians(-(a2 + a3)), { 0, 1, 0 }) *
-//                       glm::vec4(normal1.x, normal1.y, normal1.z, .0f));
-//   a5      = acosf(-normal1.x);
-//   a4      = std::clamp(atan2(normal1.z, normal1.y), -glm::pi<float>(), glm::pi<float>());
-// }
-
-static void inverse_kinematics(glm::vec3 pos, glm::vec3 normal, float& a1, float& a2, float& a3, float& a4, float& a5) {
+static void inverse_kinematics(glm::vec3 pos, glm::vec3 normal, float& a1, float& a2, float& a3, float& a4, float& a5)
+{
   float l1 = .91f, l2 = .81f, l3 = .33f, dy = .27f, dz = .26f;
 
   glm::vec3 normalized_normal = glm::normalize(normal);
-  glm::vec3 pos1 = pos + normalized_normal * l3;
+  glm::vec3 pos1              = pos + normalized_normal * l3;
 
   float e = sqrtf(pos1.z * pos1.z + pos1.x * pos1.x - dz * dz);
-  a1 = atan2f(pos1.z, -pos1.x) + atan2f(dz, e);
+  a1      = atan2f(pos1.z, -pos1.x) + atan2f(dz, e);
 
   glm::vec3 pos2(e, pos1.y - dy, 0.0f);
   a3 = -acosf(std::min(1.0f, (pos2.x * pos2.x + pos2.y * pos2.y - l1 * l1 - l2 * l2) / (2.0f * l1 * l2)));
 
-  float k = l1 + l2 * cosf(a3);
+  float k       = l1 + l2 * cosf(a3);
   float l_prime = l2 * sinf(a3);
-  a2 = -atan2f(pos2.y, sqrtf(pos2.x * pos2.x + pos2.z * pos2.z)) - atan2f(l_prime, k);
+  a2            = -atan2f(pos2.y, sqrtf(pos2.x * pos2.x + pos2.z * pos2.z)) - atan2f(l_prime, k);
 
   glm::mat4 rotate_y_neg_a1 = glm::rotate(glm::mat4(1.0f), -a1, glm::vec3(0.0f, 1.0f, 0.0f));
-  glm::vec4 normal1_vec4 = rotate_y_neg_a1 * glm::vec4(normalized_normal.x, normalized_normal.y, normalized_normal.z, 0.0f);
+  glm::vec4 normal1_vec4 =
+      rotate_y_neg_a1 * glm::vec4(normalized_normal.x, normalized_normal.y, normalized_normal.z, 0.0f);
   glm::vec3 normal1(normal1_vec4.x, normal1_vec4.y, normal1_vec4.z);
 
   glm::mat4 rotate_z_neg_a2_plus_a3 = glm::rotate(glm::mat4(1.0f), -(a2 + a3), glm::vec3(0.0f, 0.0f, 1.0f));
-  normal1_vec4 = rotate_z_neg_a2_plus_a3 * glm::vec4(normal1.x, normal1.y, normal1.z, 0.0f);
-  normal1 = glm::vec3(normal1_vec4.x, normal1_vec4.y, normal1_vec4.z);
+  normal1_vec4                      = rotate_z_neg_a2_plus_a3 * glm::vec4(normal1.x, normal1.y, normal1.z, 0.0f);
+  normal1                           = glm::vec3(normal1_vec4.x, normal1_vec4.y, normal1_vec4.z);
 
   a5 = acosf(normal1.x);
   a4 = atan2f(normal1.z, normal1.y);
