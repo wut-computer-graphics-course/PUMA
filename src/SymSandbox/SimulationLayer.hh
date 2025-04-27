@@ -102,6 +102,16 @@ namespace sym
         translation                          = glm::translate(translation, glm::vec3(-.01f, 0, 0));
         m_mirror_back.m_model_mat            = translation * rotation;
       }
+
+      // sphere
+      {
+        auto&& [vertices, indices] = generate_sphere(1.5f, 20, 20);
+
+        m_sphere.m_model =
+            std::make_shared<Model>(vertices, indices, ModelParams{ .m_position = true, .m_normal = true });
+        m_sphere.m_model_mat = glm::translate(glm::mat4(1), glm::vec3(-2, 1.5f / 2, -3.5f));
+        m_sphere.m_color     = glm::vec3(0, 1, 1);
+      }
     }
 
     ~SimulationLayer() = default;
@@ -130,6 +140,7 @@ namespace sym
       draw_walls(m_ambient_shader);
       draw_robot(m_ambient_shader);
       draw_mirror(m_ambient_shader);
+      draw_sphere(m_ambient_shader);
       draw_lights();
       // -------------------------------------------------
 
@@ -163,6 +174,7 @@ namespace sym
 
       draw_mirror(m_mirror_shader);
       draw_walls(m_phong_shader);
+      draw_sphere(m_phong_shader);
 #ifndef MIRROR_PASS
       draw_robot(m_phong_shader);
 #endif
@@ -182,7 +194,8 @@ namespace sym
 
       RenderCommand::depth_test(true);
       RenderCommand::set_color_mask(false, false, false, false);
-      draw_mirror_back(m_mirror_shader);
+      draw_mirror_back(m_ambient_shader);
+      draw_sphere(m_ambient_shader);
       RenderCommand::stencil_test(true);
       RenderCommand::depth_mask(false);
       RenderCommand::set_stencil_op(StencilAct::KEEP, StencilAct::KEEP, StencilAct::REPLACE);
@@ -411,6 +424,27 @@ namespace sym
       shader->unbind();
     }
 
+    void draw_sphere(Shader* shader)
+    {
+      auto camera = Renderer::get_camera();
+      auto vp     = camera->get_projection() * camera->get_view();
+
+      shader->bind();
+      {
+        RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
+        RenderCommand::set_line_width(1);
+        shader->upload_uniform_mat4("u_ViewProjection", vp);
+        shader->upload_uniform_float3("u_CameraPos", camera->get_position());
+        shader->upload_uniform_float3("u_Light.position", m_light.m_model_mat[3]);
+        shader->upload_uniform_float3("u_Light.color", m_light.m_color);
+        shader->upload_uniform_float3("u_Color", m_sphere.m_color);
+        // sphere
+        shader->upload_uniform_mat4("u_Model", m_sphere.m_model_mat);
+        Renderer::submit(*m_sphere.m_model);
+      }
+      shader->unbind();
+    }
+
     void update_camera(float dt)
     {
       static bool first_time = true;
@@ -486,6 +520,13 @@ namespace sym
       std::shared_ptr<Model> m_model;
       glm::mat4 m_model_mat;
     } m_mirror_back;
+
+    struct
+    {
+      std::shared_ptr<Model> m_model;
+      glm::mat4 m_model_mat;
+      glm::vec3 m_color;
+    } m_sphere;
   };
 } // namespace sym
 
