@@ -95,6 +95,12 @@ namespace sym
         m_mirror.m_view_mat =
             glm::scale(m_mirror.m_model_mat, glm::vec3(1, 1, -1)) * glm::inverse(m_mirror.m_model_mat);
         m_mirror.m_color = glm::vec3(1, 1, 0);
+
+        auto&& [back_vertices, back_indices] = generate_square({ m_mirror.m_size, m_mirror.m_size });
+        m_mirror_back.m_model                = std::make_shared<Model>(back_vertices, back_indices, params);
+        rotation                             = glm::rotate(glm::mat4(1), -M_PI_2f, glm::vec3(0, 1, 0));
+        translation                          = glm::translate(translation, glm::vec3(-.01f, 0, 0));
+        m_mirror_back.m_model_mat            = translation * rotation;
       }
     }
 
@@ -176,6 +182,7 @@ namespace sym
 
       RenderCommand::depth_test(true);
       RenderCommand::set_color_mask(false, false, false, false);
+      draw_mirror_back(m_mirror_shader);
       RenderCommand::stencil_test(true);
       RenderCommand::depth_mask(false);
       RenderCommand::set_stencil_op(StencilAct::KEEP, StencilAct::KEEP, StencilAct::REPLACE);
@@ -378,6 +385,32 @@ namespace sym
       shader->unbind();
     }
 
+    void draw_mirror_back(Shader* shader)
+    {
+      auto camera = Renderer::get_camera();
+      auto vp     = camera->get_projection() * camera->get_view();
+
+      shader->bind();
+      {
+#ifdef SHADOW_VOLUME_PASS
+        RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES_ADJACENCY);
+#else
+        RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
+#endif
+        RenderCommand::set_line_width(1);
+        shader->upload_uniform_mat4("u_ViewProjection", vp);
+        shader->upload_uniform_float3("u_CameraPos", camera->get_position());
+        shader->upload_uniform_float3("u_Light.position", m_light.m_model_mat[3]);
+        shader->upload_uniform_float3("u_Light.color", m_light.m_color);
+        shader->upload_uniform_float3("u_Color", m_mirror.m_color);
+        if (shader == m_mirror_shader) { shader->upload_uniform_float("u_Alpha", m_mirror.m_alpha); }
+        // mirror
+        shader->upload_uniform_mat4("u_Model", m_mirror_back.m_model_mat);
+        Renderer::submit(*m_mirror_back.m_model);
+      }
+      shader->unbind();
+    }
+
     void update_camera(float dt)
     {
       static bool first_time = true;
@@ -447,6 +480,12 @@ namespace sym
       const float m_alpha = .5f;
       glm::vec3 m_color;
     } m_mirror;
+
+    struct
+    {
+      std::shared_ptr<Model> m_model;
+      glm::mat4 m_model_mat;
+    } m_mirror_back;
   };
 } // namespace sym
 
