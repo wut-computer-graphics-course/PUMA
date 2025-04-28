@@ -142,42 +142,40 @@ namespace sym
       {
         update_camera(dt);
         update_robot(dt);
-      }
-      // ------------
 
-      // Spark particle system update
-      if (m_sparks_enabled)
-      {
-        const float spawn_rate = 50.0f; // particles per second
-        m_spark_accum += dt * spawn_rate;
-        glm::vec3 eff_pos = m_robot.m_joints[5].m_model_mat * glm::vec4(-2.05f, 0.27f, -0.26f, 1);
-        std::uniform_real_distribution<float> dir_dist(-1.0f, 1.0f);
-        std::uniform_real_distribution<float> thickness_dist(0.05f, 0.05f);
-        std::uniform_real_distribution<float> lifetime_dist(1.5f, 1.5f);
-        while (m_spark_accum >= 1.0f)
+        // Spark particle system update
+        if (m_sparks_enabled)
         {
-          m_spark_accum -= 1.0f;
-          glm::vec3 dir   = glm::normalize(glm::vec3(dir_dist(m_rng), dir_dist(m_rng), dir_dist(m_rng)));
-          if (glm::dot(dir, m_plane_normal) < 0) {
-            dir = -dir;
+          const float spawn_rate = 50.0f; // particles per second
+          m_spark_accum += dt * spawn_rate;
+          glm::vec3 eff_pos = m_robot.m_joints[5].m_model_mat * glm::vec4(-2.05f, 0.27f, -0.26f, 1);
+          std::uniform_real_distribution<float> dir_dist(-1.0f, 1.0f);
+          std::uniform_real_distribution<float> thickness_dist(0.05f, 0.05f);
+          std::uniform_real_distribution<float> lifetime_dist(1.5f, 1.5f);
+          while (m_spark_accum >= 1.0f)
+          {
+            m_spark_accum -= 1.0f;
+            glm::vec3 dir = glm::normalize(glm::vec3(dir_dist(m_rng), dir_dist(m_rng), dir_dist(m_rng)));
+            if (glm::dot(dir, m_plane_normal) < 0) { dir = -dir; }
+            float thickness = thickness_dist(m_rng);
+            float lifetime  = lifetime_dist(m_rng);
+            m_sparks.push_back({ eff_pos, dir, thickness, 0.0f, lifetime });
           }
-          float thickness = thickness_dist(m_rng);
-          float lifetime  = lifetime_dist(m_rng);
-          m_sparks.push_back({ eff_pos, dir, thickness, 0.0f, lifetime });
+        }
+        // Update and remove dead sparks
+        for (auto& p : m_sparks)
+        {
+          glm::vec3 gravity = glm::vec3(0, -9.81f, 0);
+          p.position += p.direction * dt * 5.0f + dt * gravity * 0.5f;
+
+          p.age += dt;
+        }
+        while (!m_sparks.empty() && m_sparks.front().age > m_sparks.front().lifetime)
+        {
+          m_sparks.pop_front();
         }
       }
-      // Update and remove dead sparks
-      for (auto& p : m_sparks)
-      {
-        glm::vec3 gravity = glm::vec3(0, -9.81f, 0);
-        p.position += p.direction * dt * 5.0f + dt * gravity * 0.5f;
-
-        p.age += dt;
-      }
-      while (!m_sparks.empty() && m_sparks.front().age > m_sparks.front().lifetime)
-      {
-        m_sparks.pop_front();
-      }
+      // ------------
 
       /* ==========================================================================================================  */
       /* ============================================= SHADOW VOLUMES =============================================  */
