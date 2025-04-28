@@ -122,7 +122,7 @@ namespace sym
 
       // sphere
       {
-        auto&& [vertices, indices] = generate_sphere(1.5f, 20, 20);
+        auto&& [vertices, indices] = generate_sphere(1.5f, 100, 100);
 
         m_sphere.m_model =
             std::make_shared<Model>(vertices, indices, ModelParams{ .m_position = true, .m_normal = true });
@@ -140,40 +140,8 @@ namespace sym
       // ------------
       if (m_update)
       {
-        update_camera(dt);
         update_robot(dt);
-
-        // Spark particle system update
-        if (m_sparks_enabled)
-        {
-          const float spawn_rate = 50.0f; // particles per second
-          m_spark_accum += dt * spawn_rate;
-          glm::vec3 eff_pos = m_robot.m_joints[5].m_model_mat * glm::vec4(-2.05f, 0.27f, -0.26f, 1);
-          std::uniform_real_distribution<float> dir_dist(-1.0f, 1.0f);
-          std::uniform_real_distribution<float> thickness_dist(0.05f, 0.05f);
-          std::uniform_real_distribution<float> lifetime_dist(1.5f, 1.5f);
-          while (m_spark_accum >= 1.0f)
-          {
-            m_spark_accum -= 1.0f;
-            glm::vec3 dir = glm::normalize(glm::vec3(dir_dist(m_rng), dir_dist(m_rng), dir_dist(m_rng)));
-            if (glm::dot(dir, m_plane_normal) < 0) { dir = -dir; }
-            float thickness = thickness_dist(m_rng);
-            float lifetime  = lifetime_dist(m_rng);
-            m_sparks.push_back({ eff_pos, dir, thickness, 0.0f, lifetime });
-          }
-        }
-        // Update and remove dead sparks
-        for (auto& p : m_sparks)
-        {
-          glm::vec3 gravity = glm::vec3(0, -9.81f, 0);
-          p.position += p.direction * dt * 5.0f + dt * gravity * 0.5f;
-
-          p.age += dt;
-        }
-        while (!m_sparks.empty() && m_sparks.front().age > m_sparks.front().lifetime)
-        {
-          m_sparks.pop_front();
-        }
+        update_sparks(dt);
       }
       // ------------
 
@@ -301,7 +269,11 @@ namespace sym
         ImGui::Dummy(ImVec2(0, 5));
         ImGui::Separator();
         ImGui::Text("Sparks");
-        ImGui::Checkbox("Enabled", &m_sparks_enabled);
+        ImGui::SameLine();
+        ImGui::Checkbox("##1", &m_sparks_enabled);
+        ImGui::Text("Animation");
+        ImGui::SameLine();
+        ImGui::Checkbox("##2", &m_animation);
       }
       ImGui::End();
     }
@@ -336,25 +308,62 @@ namespace sym
       // ---------------------------------------- ANIMATION ----------------------------------------
       // -------------------------------------------------------------------------------------------
 
-      float& a1 = m_robot.m_joints[1].m_angle;
-      float& a2 = m_robot.m_joints[2].m_angle;
-      float& a3 = m_robot.m_joints[3].m_angle;
-      float& a4 = m_robot.m_joints[4].m_angle;
-      float& a5 = m_robot.m_joints[5].m_angle;
+      if (m_animation)
+      {
+        float& a1 = m_robot.m_joints[1].m_angle;
+        float& a2 = m_robot.m_joints[2].m_angle;
+        float& a3 = m_robot.m_joints[3].m_angle;
+        float& a4 = m_robot.m_joints[4].m_angle;
+        float& a5 = m_robot.m_joints[5].m_angle;
 
-      static const float r = .015f;
-      static float a       = 0;
-      a += 2 * dt;
+        static const float r = .015f;
+        static float a       = 0;
+        a += 2 * dt;
 
-      static glm::vec3 pos = robot_translations[5];
-      pos.y += std::cos(a) * r;
-      pos.z += std::sin(a) * r;
+        static glm::vec3 pos = robot_translations[5];
+        pos.y += std::cos(a) * r;
+        pos.z += std::sin(a) * r;
 
-      inverse_kinematics(pos, m_plane_normal, a1, a2, a3, a4, a5);
+        inverse_kinematics(pos, m_plane_normal, a1, a2, a3, a4, a5);
+      }
 
       // -------------------------------------------------------------------------------------------
       // -------------------------------------------------------------------------------------------
       // -------------------------------------------------------------------------------------------
+    }
+
+    void update_sparks(float dt)
+    {
+      if (m_sparks_enabled)
+      {
+        const float spawn_rate = 50.0f; // particles per second
+        m_spark_accum += dt * spawn_rate;
+        glm::vec3 eff_pos = m_robot.m_joints[5].m_model_mat * glm::vec4(-2.05f, 0.27f, -0.26f, 1);
+        std::uniform_real_distribution<float> dir_dist(-1.0f, 1.0f);
+        std::uniform_real_distribution<float> thickness_dist(0.05f, 0.05f);
+        std::uniform_real_distribution<float> lifetime_dist(1.5f, 1.5f);
+        while (m_spark_accum >= 1.0f)
+        {
+          m_spark_accum -= 1.0f;
+          glm::vec3 dir = glm::normalize(glm::vec3(dir_dist(m_rng), dir_dist(m_rng), dir_dist(m_rng)));
+          if (glm::dot(dir, m_plane_normal) < 0) { dir = -dir; }
+          float thickness = thickness_dist(m_rng);
+          float lifetime  = lifetime_dist(m_rng);
+          m_sparks.push_back({ eff_pos, dir, thickness, 0.0f, lifetime });
+        }
+      }
+      // Update and remove dead sparks
+      for (auto& p : m_sparks)
+      {
+        glm::vec3 gravity = glm::vec3(0, -9.81f, 0);
+        p.position += p.direction * dt * 5.0f + dt * gravity * 0.5f;
+
+        p.age += dt;
+      }
+      while (!m_sparks.empty() && m_sparks.front().age > m_sparks.front().lifetime)
+      {
+        m_sparks.pop_front();
+      }
     }
 
     void draw_walls(Shader* shader)
@@ -522,17 +531,6 @@ namespace sym
       shader->unbind();
     }
 
-    void update_camera(float dt)
-    {
-      static bool first_time = true;
-      if (first_time)
-      {
-        auto camera = dynamic_cast<FpsCamera*>(Renderer::get_camera());
-        if (camera) { camera->look_at({ 0, 5.f / 2, 0 }); }
-        first_time = false;
-      }
-    }
-
     bool gui_simulation_paused_event_handler(GuiSimulationPausedEvent& e)
     {
       m_update = false;
@@ -546,7 +544,16 @@ namespace sym
     }
 
    private:
+    Shader* m_ambient_shader;
+    Shader* m_light_shader;
+    Shader* m_phong_shader;
+    Shader* m_shadow_volume_shader;
+    Shader* m_mirror_shader;
+    Shader* m_particle_shader;
+
     glm::vec3 m_plane_normal = glm::vec3(1, 0, 0);
+    bool m_update            = true;
+    bool m_animation         = true;
 
     struct PumaJoint
     {
@@ -555,14 +562,11 @@ namespace sym
       glm::mat4 m_model_mat;
     };
 
-    bool m_update = true;
-
-    Shader* m_ambient_shader;
-    Shader* m_light_shader;
-    Shader* m_phong_shader;
-    Shader* m_shadow_volume_shader;
-    Shader* m_mirror_shader;
-    Shader* m_particle_shader;
+    struct
+    {
+      std::array<PumaJoint, 6> m_joints;
+      glm::vec3 m_color;
+    } m_robot;
 
     struct
     {
@@ -578,12 +582,6 @@ namespace sym
       glm::mat4 m_model_mat;
       glm::vec3 m_color;
     } m_light;
-
-    struct
-    {
-      std::array<PumaJoint, 6> m_joints;
-      glm::vec3 m_color;
-    } m_robot;
 
     struct
     {
