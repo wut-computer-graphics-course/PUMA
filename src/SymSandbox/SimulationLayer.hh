@@ -138,16 +138,19 @@ namespace sym
       // Spark particle system update
       if (m_sparks_enabled)
       {
-        const float spawn_rate = 2000.0f; // particles per second
+        const float spawn_rate = 50.0f; // particles per second
         m_spark_accum += dt * spawn_rate;
-        glm::vec3 eff_pos = glm::vec3(m_robot.m_joints[5].m_model_mat[3]);
+        glm::vec3 eff_pos = m_robot.m_joints[5].m_model_mat * glm::vec4(-2.05f, 0.27f, -0.26f, 1);
         std::uniform_real_distribution<float> dir_dist(-1.0f, 1.0f);
-        std::uniform_real_distribution<float> thickness_dist(0.05f, 0.2f);
-        std::uniform_real_distribution<float> lifetime_dist(0.5f, 1.5f);
+        std::uniform_real_distribution<float> thickness_dist(0.05f, 0.05f);
+        std::uniform_real_distribution<float> lifetime_dist(1.5f, 1.5f);
         while (m_spark_accum >= 1.0f)
         {
           m_spark_accum -= 1.0f;
           glm::vec3 dir   = glm::normalize(glm::vec3(dir_dist(m_rng), dir_dist(m_rng), dir_dist(m_rng)));
+          if (glm::dot(dir, m_plane_normal) < 0) {
+            dir = -dir;
+          }
           float thickness = thickness_dist(m_rng);
           float lifetime  = lifetime_dist(m_rng);
           m_sparks.push_back({ eff_pos, dir, thickness, 0.0f, lifetime });
@@ -156,7 +159,9 @@ namespace sym
       // Update and remove dead sparks
       for (auto& p : m_sparks)
       {
-        p.position += p.direction * dt * 5.0f;
+        glm::vec3 gravity = glm::vec3(0, -9.81f, 0);
+        p.position += p.direction * dt * 5.0f + dt * gravity * 0.5f;
+
         p.age += dt;
       }
       while (!m_sparks.empty() && m_sparks.front().age > m_sparks.front().lifetime)
@@ -334,7 +339,7 @@ namespace sym
       pos.y += std::cos(a) * r;
       pos.z += std::sin(a) * r;
 
-      inverse_kinematics(pos, glm::vec3(1, 0, 0), a1, a2, a3, a4, a5);
+      inverse_kinematics(pos, m_plane_normal, a1, a2, a3, a4, a5);
 
       // -------------------------------------------------------------------------------------------
       // -------------------------------------------------------------------------------------------
@@ -509,6 +514,8 @@ namespace sym
     }
 
    private:
+    glm::vec3 m_plane_normal = glm::vec3(1, 0, 0);
+
     struct PumaJoint
     {
       std::shared_ptr<Model> m_model;
@@ -584,7 +591,7 @@ namespace sym
     float m_spark_accum   = 0.0f;
     bool m_sparks_enabled = true;
     std::mt19937 m_rng{ std::random_device{}() };
-    size_t m_max_sparks = 100;
+    size_t m_max_sparks = 500;
     std::shared_ptr<Model> m_spark_model;
   };
 } // namespace sym
