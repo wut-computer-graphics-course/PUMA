@@ -143,6 +143,10 @@ namespace sym
         update_robot(dt);
         update_sparks(dt);
       }
+
+      auto camera     = Renderer::get_camera();
+      auto vp         = camera->get_projection() * camera->get_view();
+      auto camera_pos = camera->get_position();
       // ------------
 
       /* ==========================================================================================================  */
@@ -154,11 +158,11 @@ namespace sym
       // Ambient pass to make sure z-buffer contains data
       // -------------------------------------------------
       RenderCommand::depth_test(true);
-      draw_walls(m_ambient_shader);
-      draw_robot(m_ambient_shader);
-      draw_mirror(m_ambient_shader);
-      draw_sphere(m_ambient_shader);
-      draw_lights();
+      draw_walls(m_ambient_shader, vp, camera_pos);
+      draw_robot(m_ambient_shader, vp, camera_pos);
+      draw_mirror(m_ambient_shader, vp, camera_pos);
+      draw_sphere(m_ambient_shader, vp, camera_pos);
+      draw_lights(m_light_shader, vp);
       // -------------------------------------------------
 
       // -------------------------------------------------------------------
@@ -172,8 +176,8 @@ namespace sym
       RenderCommand::set_stencil_op_per_face(Face::BACK, StencilAct::KEEP, StencilAct::INCR_WRAP, StencilAct::KEEP);
       RenderCommand::set_stencil_op_per_face(Face::FRONT, StencilAct::KEEP, StencilAct::DECR_WRAP, StencilAct::KEEP);
       RenderCommand::face_culling(false);
-      draw_robot(m_shadow_volume_shader);
-      draw_mirror(m_shadow_volume_shader);
+      draw_robot(m_shadow_volume_shader, vp, camera_pos);
+      draw_mirror(m_shadow_volume_shader, vp, camera_pos);
       RenderCommand::face_culling(true);
       RenderCommand::depth_clamp(false);
       // -------------------------------------------------------------------
@@ -189,9 +193,9 @@ namespace sym
       RenderCommand::depth_test(true);
 #endif
 
-      draw_mirror(m_mirror_shader);
-      draw_walls(m_phong_shader);
-      draw_sphere(m_phong_shader);
+      draw_mirror(m_mirror_shader, vp, camera_pos);
+      draw_walls(m_phong_shader, vp, camera_pos);
+      draw_sphere(m_phong_shader, vp, camera_pos);
 #ifndef MIRROR_PASS
       draw_robot(m_phong_shader);
 #endif
@@ -211,23 +215,23 @@ namespace sym
 
       RenderCommand::depth_test(true);
       RenderCommand::set_color_mask(false, false, false, false);
-      draw_mirror_back(m_ambient_shader);
-      draw_sphere(m_ambient_shader);
+      draw_mirror_back(m_ambient_shader, vp, camera_pos);
+      draw_sphere(m_ambient_shader, vp, camera_pos);
       RenderCommand::stencil_test(true);
       RenderCommand::depth_mask(false);
       RenderCommand::set_stencil_op(StencilAct::KEEP, StencilAct::KEEP, StencilAct::REPLACE);
       RenderCommand::set_stencil_func(CompFunc::ALWAYS, 1, 0xFF);
 
-      draw_mirror(m_ambient_shader);
+      draw_mirror(m_ambient_shader, vp, camera_pos);
 
       RenderCommand::set_color_mask(true, true, true, true);
       RenderCommand::depth_mask(true);
       RenderCommand::set_depth_func(CompFunc::LESS);
       RenderCommand::set_stencil_func(CompFunc::EQUAL, 1, 0xFF);
 
-      glFrontFace(GL_CW); // TODO:
-      draw_robot(m_phong_shader, m_mirror.m_view_mat);
-      glFrontFace(GL_CCW); // TODO:
+      RenderCommand::face_culling(Face::FRONT);
+      draw_robot(m_phong_shader, vp * m_mirror.m_view_mat, camera_pos);
+      RenderCommand::face_culling(true);
 
       RenderCommand::stencil_test(false);
 #endif
@@ -235,10 +239,10 @@ namespace sym
       // --------------------------
       // Render rest of the scene
       // --------------------------
-      draw_mirror(m_mirror_shader);
-      draw_robot(m_phong_shader);
-      draw_sparks(m_particle_shader);
-      draw_lights();
+      draw_mirror(m_mirror_shader, vp, camera_pos);
+      draw_robot(m_phong_shader, vp, camera_pos);
+      draw_sparks(m_particle_shader, vp, camera_pos);
+      draw_lights(m_light_shader, vp);
       //  -------------------------
     }
 
@@ -366,18 +370,15 @@ namespace sym
       }
     }
 
-    void draw_walls(Shader* shader)
+    void draw_walls(Shader* shader, glm::mat4 view_projection, glm::vec3 camera_pos)
     {
-      auto camera = Renderer::get_camera();
-      auto vp     = camera->get_projection() * camera->get_view();
-
       shader->bind();
       {
         RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
         RenderCommand::set_line_width(1);
         RenderCommand::face_culling(Face::FRONT);
-        shader->upload_uniform_mat4("u_ViewProjection", vp);
-        shader->upload_uniform_float3("u_CameraPos", camera->get_position());
+        shader->upload_uniform_mat4("u_ViewProjection", view_projection);
+        shader->upload_uniform_float3("u_CameraPos", camera_pos);
         shader->upload_uniform_float3("u_Light.position", m_light.m_model_mat[3]);
         shader->upload_uniform_float3("u_Light.color", m_light.m_color);
         shader->upload_uniform_float3("u_Color", m_walls.m_color);
@@ -389,11 +390,8 @@ namespace sym
       shader->unbind();
     }
 
-    void draw_robot(Shader* shader, glm::mat4 camera_transform = glm::mat4(1))
+    void draw_robot(Shader* shader, glm::mat4 view_projection, glm::vec3 camera_pos)
     {
-      auto camera = Renderer::get_camera();
-      auto vp     = camera->get_projection() * camera->get_view() * camera_transform;
-
       shader->bind();
       {
 #ifdef SHADOW_VOLUME_PASS
@@ -402,8 +400,8 @@ namespace sym
         RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
 #endif
         RenderCommand::set_line_width(1);
-        shader->upload_uniform_mat4("u_ViewProjection", vp);
-        shader->upload_uniform_float3("u_CameraPos", camera->get_position());
+        shader->upload_uniform_mat4("u_ViewProjection", view_projection);
+        shader->upload_uniform_float3("u_CameraPos", camera_pos);
         shader->upload_uniform_float3("u_Light.position", m_light.m_model_mat[3]);
         shader->upload_uniform_float3("u_Light.color", m_light.m_color);
         shader->upload_uniform_float3("u_Color", m_robot.m_color);
@@ -416,29 +414,23 @@ namespace sym
       shader->unbind();
     }
 
-    void draw_lights()
+    void draw_lights(Shader* shader, glm::mat4 view_projection)
     {
-      auto camera = Renderer::get_camera();
-      auto vp     = camera->get_projection() * camera->get_view();
-
-      m_light_shader->bind();
+      shader->bind();
       {
         RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
         RenderCommand::set_line_width(1);
-        m_light_shader->upload_uniform_mat4("u_ViewProjection", vp);
-        m_light_shader->upload_uniform_float3("u_Color", m_light.m_color);
+        shader->upload_uniform_mat4("u_ViewProjection", view_projection);
+        shader->upload_uniform_float3("u_Color", m_light.m_color);
         // lights
-        m_light_shader->upload_uniform_mat4("u_Model", m_light.m_model_mat);
+        shader->upload_uniform_mat4("u_Model", m_light.m_model_mat);
         Renderer::submit(*m_light.m_model);
       }
-      m_light_shader->unbind();
+      shader->unbind();
     }
 
-    void draw_mirror(Shader* shader)
+    void draw_mirror(Shader* shader, glm::mat4 view_projection, glm::vec3 camera_pos)
     {
-      auto camera = Renderer::get_camera();
-      auto vp     = camera->get_projection() * camera->get_view();
-
       shader->bind();
       {
 #ifdef SHADOW_VOLUME_PASS
@@ -447,8 +439,8 @@ namespace sym
         RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
 #endif
         RenderCommand::set_line_width(1);
-        shader->upload_uniform_mat4("u_ViewProjection", vp);
-        shader->upload_uniform_float3("u_CameraPos", camera->get_position());
+        shader->upload_uniform_mat4("u_ViewProjection", view_projection);
+        shader->upload_uniform_float3("u_CameraPos", camera_pos);
         shader->upload_uniform_float3("u_Light.position", m_light.m_model_mat[3]);
         shader->upload_uniform_float3("u_Light.color", m_light.m_color);
         shader->upload_uniform_float3("u_Color", m_mirror.m_color);
@@ -460,35 +452,8 @@ namespace sym
       shader->unbind();
     }
 
-    void draw_sparks(Shader* shader)
+    void draw_mirror_back(Shader* shader, glm::mat4 view_projection, glm::vec3 camera_pos)
     {
-      if (m_sparks.empty()) return;
-      auto camera = Renderer::get_camera();
-      auto vp     = camera->get_projection() * camera->get_view();
-
-      std::vector<SparkVertex> vertices;
-      vertices.reserve(m_sparks.size());
-      for (const auto& p : m_sparks)
-      {
-        vertices.push_back({ p.position, p.direction, p.thickness, p.age, p.lifetime });
-      }
-
-      m_spark_model->swap_vertices(vertices.size() * sizeof(SparkVertex), vertices.data(), 0);
-      shader->bind();
-      shader->upload_uniform_mat4("u_ViewProjection", vp);
-      shader->upload_uniform_float3("u_CameraPos", camera->get_position());
-      RenderCommand::set_draw_primitive(DrawPrimitive::POINTS);
-      RenderCommand::depth_mask(false);
-      Renderer::submit(*m_spark_model, vertices.size());
-      RenderCommand::depth_mask(true);
-      shader->unbind();
-    }
-
-    void draw_mirror_back(Shader* shader)
-    {
-      auto camera = Renderer::get_camera();
-      auto vp     = camera->get_projection() * camera->get_view();
-
       shader->bind();
       {
 #ifdef SHADOW_VOLUME_PASS
@@ -497,8 +462,8 @@ namespace sym
         RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
 #endif
         RenderCommand::set_line_width(1);
-        shader->upload_uniform_mat4("u_ViewProjection", vp);
-        shader->upload_uniform_float3("u_CameraPos", camera->get_position());
+        shader->upload_uniform_mat4("u_ViewProjection", view_projection);
+        shader->upload_uniform_float3("u_CameraPos", camera_pos);
         shader->upload_uniform_float3("u_Light.position", m_light.m_model_mat[3]);
         shader->upload_uniform_float3("u_Light.color", m_light.m_color);
         shader->upload_uniform_float3("u_Color", m_mirror.m_color);
@@ -510,17 +475,14 @@ namespace sym
       shader->unbind();
     }
 
-    void draw_sphere(Shader* shader)
+    void draw_sphere(Shader* shader, glm::mat4 view_projection, glm::vec3 camera_pos)
     {
-      auto camera = Renderer::get_camera();
-      auto vp     = camera->get_projection() * camera->get_view();
-
       shader->bind();
       {
         RenderCommand::set_draw_primitive(DrawPrimitive::TRIANGLES);
         RenderCommand::set_line_width(1);
-        shader->upload_uniform_mat4("u_ViewProjection", vp);
-        shader->upload_uniform_float3("u_CameraPos", camera->get_position());
+        shader->upload_uniform_mat4("u_ViewProjection", view_projection);
+        shader->upload_uniform_float3("u_CameraPos", camera_pos);
         shader->upload_uniform_float3("u_Light.position", m_light.m_model_mat[3]);
         shader->upload_uniform_float3("u_Light.color", m_light.m_color);
         shader->upload_uniform_float3("u_Color", m_sphere.m_color);
@@ -528,6 +490,28 @@ namespace sym
         shader->upload_uniform_mat4("u_Model", m_sphere.m_model_mat);
         Renderer::submit(*m_sphere.m_model);
       }
+      shader->unbind();
+    }
+
+    void draw_sparks(Shader* shader, glm::mat4 view_projection, glm::vec3 camera_pos)
+    {
+      if (m_sparks.empty()) return;
+
+      std::vector<SparkVertex> vertices;
+      vertices.reserve(m_sparks.size());
+      for (const auto& p : m_sparks)
+      {
+        vertices.push_back({ p.position, p.direction, p.thickness, p.age, p.lifetime });
+      }
+
+      m_spark_model->swap_vertices(vertices.size() * sizeof(SparkVertex), vertices.data(), 0);
+      shader->bind();
+      shader->upload_uniform_mat4("u_ViewProjection", view_projection);
+      shader->upload_uniform_float3("u_CameraPos", camera_pos);
+      RenderCommand::set_draw_primitive(DrawPrimitive::POINTS);
+      RenderCommand::depth_mask(false);
+      Renderer::submit(*m_spark_model, vertices.size());
+      RenderCommand::depth_mask(true);
       shader->unbind();
     }
 
