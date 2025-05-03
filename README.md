@@ -1,6 +1,6 @@
 # PUMA
 
-TODO: image
+![Screenshot from 2025-05-03 15-01-58](https://github.com/user-attachments/assets/d90eeb3b-4df2-499b-9319-e83ab9ca2ad5)
 
 ### About
 
@@ -16,7 +16,7 @@ The project is an animation of a PUMA robot using inverse kinematics, with the f
 
 ### Demo
 
-TODO: video
+https://github.com/user-attachments/assets/1b2c6b20-d8a8-4a52-9bfd-00c7fea34e55
 
 ### Build
 
