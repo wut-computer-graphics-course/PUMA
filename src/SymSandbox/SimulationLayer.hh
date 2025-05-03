@@ -231,6 +231,7 @@ namespace sym
 
       RenderCommand::face_culling(Face::FRONT);
       draw_robot(m_phong_shader, vp * m_mirror.m_view_mat, camera_pos);
+      draw_sparks(m_particle_shader, vp * m_mirror.m_view_mat, camera_pos);
       RenderCommand::face_culling(true);
 
       RenderCommand::stencil_test(false);
